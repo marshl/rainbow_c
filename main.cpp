@@ -42,11 +42,16 @@ int getHue(int red, int green, int blue) {
     return int(hue);
 }
 
+int getLum(int r, int g, int b) {
+    return (std::max(r, std::max(g, b)) + std::min(r, std::min(g, b))) / 2;
+}
+
 struct Colour {
     uint8_t r;
     uint8_t g;
     uint8_t b;
     int hue;
+    int lum;
 
     Colour() { this->r = this->g = this->b = this->hue = 0; }
 
@@ -55,6 +60,7 @@ struct Colour {
         this->g = _g;
         this->b = _b;
         this->hue = getHue(_r, _g, _b);
+        this->lum = getLum(_r, _g, _b);
     }
 };
 
@@ -91,15 +97,19 @@ std::ostream &operator<<(std::ostream &os, const Point &point) {
 }
 
 int ColourDiff(Colour *colour_1, Colour *colour_2) {
-//    int d = colour_1->hue - colour_2->hue;
-//    std::cout << d << std::endl;
-//    return  abs(d);
-//    return abs((colour_1->r + colour_1->g + colour_1->b) - (colour_2->r + colour_2->g + colour_2->b));
-
     int r = (int) colour_1->r - (int) colour_2->r;
     int g = (int) colour_1->g - (int) colour_2->g;
     int b = (int) colour_1->b - (int) colour_2->b;
     return r * r + g * g + b * b;
+}
+
+int HueDiff(Colour *colour_1, Colour *colour_2) {
+    return abs(colour_1->hue - colour_2->hue);
+}
+
+int LuminosityDiff(Colour *colour_1, Colour *colour_2) {
+    return abs(colour_1->lum - colour_2->lum);
+//    return abs((colour_1->r + colour_1->g + colour_1->b) - (colour_2->r + colour_2->g + colour_2->b));
 }
 
 Pixel *GetPixel(std::vector<Pixel> &pixels, int x, int y) {
@@ -134,10 +144,9 @@ void FillColours(std::vector<Colour> &colours) {
         for (int g = 0; g < COLOUR_DEPTH; ++g) {
             for (int b = 0; b < COLOUR_DEPTH; ++b) {
                 Colour *colour = &colours[colour_index];
-                colour->r = r * 255 / (COLOUR_DEPTH - 1);
-                colour->g = g * 255 / (COLOUR_DEPTH - 1);
-                colour->b = b * 255 / (COLOUR_DEPTH - 1);
-                colour->hue = getHue(colour->r, colour->g, colour->b);
+                colours[colour_index] = Colour(r * 255 / (COLOUR_DEPTH - 1),
+                                               g * 255 / (COLOUR_DEPTH - 1),
+                                               b * 255 / (COLOUR_DEPTH - 1));
                 ++colour_index;
             }
         }
@@ -161,6 +170,8 @@ int main(int argc, char *argv[]) {
     Pixel *centre_pixel = GetPixelAtPoint(pixels, centre_point);
     centre_pixel->colour = colours[colour_index];
     centre_pixel->is_filled = true;
+
+    auto difference_func = ColourDiff;
 
     /*
     for (int i = 0; i < 100; ++i) {
@@ -209,7 +220,7 @@ int main(int argc, char *argv[]) {
         Point best_point;
         int best_difference = INT32_MAX;
         for (auto &available_edge : available_edges) {
-            int diff = ColourDiff(current_colour, &GetPixelAtPoint(pixels, available_edge)->colour);
+            int diff = difference_func(current_colour, &GetPixelAtPoint(pixels, available_edge)->colour);
             if (diff < best_difference) {
                 best_point = available_edge;
                 best_difference = diff;
@@ -228,7 +239,7 @@ int main(int argc, char *argv[]) {
             neighbour_pixel->colour = *current_colour;
             neighbour_pixel->is_filled = true;
             available_edges.push_back(neighbour);
-            colour_index += 1;
+            ++colour_index;
             placed_point = true;
 
             if (colour_index % 1000 == 0) {
