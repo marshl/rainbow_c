@@ -11,12 +11,9 @@
 
 auto rng = std::default_random_engine(std::random_device{}());
 
-
 int PIXELS_WIDE = 256;
 int PIXELS_HIGH = 256;
 int COLOUR_DEPTH = 128;
-const long COLOUR_COUNT = COLOUR_DEPTH * COLOUR_DEPTH * COLOUR_DEPTH;
-
 
 int getHue(int red, int green, int blue) {
     int fmin = std::min(std::min(red, green), blue);
@@ -138,32 +135,69 @@ int FillPointNeighbours(std::vector<Point> &neighbours, Point point) {
     return neighbours.size();// neighbour_count;
 }
 
-void FillColours(std::vector<Colour> &colours) {
-    long colour_index = 0;
-    for (int r = 0; r < COLOUR_DEPTH; ++r) {
-        for (int g = 0; g < COLOUR_DEPTH; ++g) {
-            for (int b = 0; b < COLOUR_DEPTH; ++b) {
-                Colour *colour = &colours[colour_index];
-                colours[colour_index] = Colour(r * 255 / (COLOUR_DEPTH - 1),
-                                               g * 255 / (COLOUR_DEPTH - 1),
-                                               b * 255 / (COLOUR_DEPTH - 1));
-                ++colour_index;
+int FillColours(std::vector<Colour> &colours, int colour_depth) {
+    for (int r = 0; r < colour_depth; ++r) {
+        for (int g = 0; g < colour_depth; ++g) {
+            for (int b = 0; b < colour_depth; ++b) {
+                colours.emplace_back(Colour(r * 255 / (colour_depth - 1),
+                                            g * 255 / (colour_depth - 1),
+                                            b * 255 / (colour_depth - 1)));
             }
         }
     }
     std::shuffle(std::begin(colours), std::end(colours), rng);
+    return colours.size();
 }
 
 int main(int argc, char *argv[]) {
+    int c;
+    opterr = 0;
+    while ((c = getopt(argc, argv, "h:w:c:")) != -1)
+        switch (c) {
+            case 'w':
+                PIXELS_WIDE = (int) strtol(optarg, nullptr, 0);
+                if (PIXELS_WIDE == 0) {
+                    std::cout << "Invalid width argument " << optarg << std::endl;
+                    return 1;
+                }
+                break;
+            case 'h':
+                PIXELS_HIGH = (int) strtol(optarg, nullptr, 0);
+                if (PIXELS_HIGH == 0) {
+                    std::cout << "Invalid height argument " << optarg << std::endl;
+                    return 1;
+                }
+                break;
+            case 'c':
+                COLOUR_DEPTH = (int) strtol(optarg, nullptr, 0);
+                if (COLOUR_DEPTH == 0) {
+                    std::cout << "Invalid colour depth argument " << optarg << std::endl;
+                    return 1;
+                }
+                break;
+            case '?':
+                if (optopt == 'h' || optopt == 'w' || optopt == 'c') {
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                } else if (isprint(optopt)) {
+                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+                } else {
+                    fprintf(stderr,
+                            "Unknown option character `\\x%x'.\n",
+                            optopt);
+                }
+                return 1;
+            default:
+                abort();
+        }
 
     time_t start_time = time(nullptr);
-    std::vector<Colour> colours(COLOUR_COUNT);
+    std::vector<Colour> colours;
+
     std::vector<Pixel> pixels(PIXELS_WIDE * PIXELS_HIGH);
     std::list<Point> available_edges;
     std::vector<Point> neighbours(8);
     long colour_index = 0;
-
-    FillColours(colours);
+    long COLOUR_COUNT = FillColours(colours, COLOUR_DEPTH);
 
     Point centre_point = Point(PIXELS_WIDE / 2, PIXELS_HIGH / 2);
     available_edges.push_back(centre_point);
