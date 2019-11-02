@@ -195,7 +195,7 @@ struct BMP {
         }
     }
 
-    void set_pixel(uint32_t x0, uint32_t y0, uint8_t B, uint8_t G, uint8_t R, uint8_t A=0) {
+    void set_pixel(uint32_t x0, uint32_t y0, uint8_t B, uint8_t G, uint8_t R, uint8_t A = 0) {
         if (x0 > (uint32_t) bmp_info_header.width || y0 > (uint32_t) bmp_info_header.height) {
             throw std::runtime_error("The region does not fit in the image!");
         }
