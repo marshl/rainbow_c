@@ -1,0 +1,10 @@
+/.vs/
+/cmake-build-debug/
+/Debug/rainbow_c.tlog/
+/Release/rainbow_c.tlog/
+/x64/
+/rainbow_c.vcxproj.filters
+/rainbow_c.vcxproj
+/rainbow_c.sln
+/CppProperties.json
+/.idea/
