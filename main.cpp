@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <list>
-#include <iostream>
 #include <algorithm>
 #include <random>
 #include <ctime>
@@ -14,7 +13,6 @@ auto rng = std::default_random_engine(std::random_device{}());
 int PIXELS_WIDE = 256;
 int PIXELS_HIGH = 256;
 int COLOUR_DEPTH = 256;
-
 
 int getHue(int red, int green, int blue) {
     int fmin = std::min(std::min(red, green), blue);
@@ -51,7 +49,7 @@ struct Colour {
     int hue;
     int lum;
 
-    Colour() { this->r = this->g = this->b = this->hue = 0; }
+    Colour() { this->r = this->g = this->b = this->hue = this->lum = 0; }
 
     Colour(uint8_t _r, uint8_t _g, uint8_t _b) {
         this->r = _r;
@@ -86,8 +84,8 @@ struct Point {
 };
 
 struct Pixel {
-    Colour colour;
-    bool is_filled;
+    Colour colour = Colour(0,0,0);
+    bool is_filled = false;
 };
 
 std::ostream &operator<<(std::ostream &os, const Point &point) {
@@ -97,7 +95,7 @@ std::ostream &operator<<(std::ostream &os, const Point &point) {
 std::vector<Colour> colours;
 std::vector<Pixel> pixels;
 std::list<Point> available_edges;
-std::vector<Point> neighbours(8);
+std::vector<Point> neighbours;
 long colour_index = 0;
 
 int ColourDiff(Colour *colour_1, Colour *colour_2) {
@@ -115,15 +113,15 @@ int LuminosityDiff(Colour *colour_1, Colour *colour_2) {
     return abs(colour_1->lum - colour_2->lum);
 }
 
-Pixel *GetPixel(std::vector<Pixel> &pixels, int x, int y) {
+Pixel *GetPixel(int x, int y) {
     return &pixels[y * PIXELS_WIDE + x];
 }
 
-Pixel *GetPixelAtPoint(std::vector<Pixel> &pixels, Point &point) {
+Pixel *GetPixelAtPoint(Point &point) {
     return &pixels[point.y * PIXELS_WIDE + point.x];
 }
 
-int FillPointNeighbours(std::vector<Point> &neighbours, Point point) {
+int FillPointNeighbours(Point point) {
     neighbours.clear();
     for (int y = -1; y <= 1; ++y) {
         if (y + point.y < 0 || y + point.y >= PIXELS_HIGH) {
@@ -138,10 +136,10 @@ int FillPointNeighbours(std::vector<Point> &neighbours, Point point) {
             neighbours.emplace_back(Point(x + point.x, y + point.y));
         }
     }
-    return neighbours.size();// neighbour_count;
+    return neighbours.size();
 }
 
-int FillColours(std::vector<Colour> &colours, int colour_depth) {
+int FillColours(int colour_depth) {
     for (int r = 0; r < colour_depth; ++r) {
         for (int g = 0; g < colour_depth; ++g) {
             for (int b = 0; b < colour_depth; ++b) {
@@ -164,7 +162,7 @@ enum StartType {
 
 void PlaceAtPoint(Point &point) {
     available_edges.push_back(point);
-    Pixel *centre_pixel = GetPixelAtPoint(pixels, point);
+    Pixel *centre_pixel = GetPixelAtPoint(point);
     centre_pixel->colour = colours[colour_index];
     centre_pixel->is_filled = true;
 }
@@ -250,9 +248,9 @@ int main(int argc, char *argv[]) {
 
     time_t start_time = time(nullptr);
     pixels.resize(PIXELS_WIDE * PIXELS_HIGH);
-    long COLOUR_COUNT = FillColours(colours, COLOUR_DEPTH);
+    long COLOUR_COUNT = FillColours(COLOUR_DEPTH);
     std::vector<Point> possible_start_points;
-    if(num_start_points <= 0) {
+    if (num_start_points <= 0) {
         num_start_points = INT32_MAX;
     }
 
@@ -294,19 +292,19 @@ int main(int argc, char *argv[]) {
         Point best_point;
         int best_difference = INT32_MAX;
         for (auto &available_edge : available_edges) {
-            int diff = difference_func(current_colour, &GetPixelAtPoint(pixels, available_edge)->colour);
+            int diff = difference_func(current_colour, &GetPixelAtPoint(available_edge)->colour);
             if (diff < best_difference) {
                 best_point = available_edge;
                 best_difference = diff;
             }
         }
 
-        int neighbour_count = FillPointNeighbours(neighbours, best_point);
+        int neighbour_count = FillPointNeighbours(best_point);
         std::shuffle(std::begin(neighbours), std::end(neighbours), rng);
-        bool placed_point = false;
-        for (int i = 0; i < neighbour_count; ++i) {
-            Point &neighbour = neighbours[i];
-            Pixel *neighbour_pixel = GetPixelAtPoint(pixels, neighbour);
+        int neighbour_index = 0;
+        for (; neighbour_index < neighbour_count; ++neighbour_index) {
+            Point &neighbour = neighbours[neighbour_index];
+            Pixel *neighbour_pixel = GetPixelAtPoint(neighbour);
             if (neighbour_pixel->is_filled) {
                 continue;
             }
@@ -314,7 +312,6 @@ int main(int argc, char *argv[]) {
             neighbour_pixel->is_filled = true;
             available_edges.push_back(neighbour);
             ++colour_index;
-            placed_point = true;
 
             if (colour_index % 1000 == 0) {
                 std::cout << colour_index << ": " << available_edges.size() << " ("
@@ -323,7 +320,7 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        if (!placed_point) {
+        if (neighbour_index == neighbour_count) {
             available_edges.remove(best_point);
         }
     }
@@ -333,7 +330,7 @@ int main(int argc, char *argv[]) {
     BMP bmp = BMP(PIXELS_WIDE, PIXELS_HIGH, false);
     for (int y = 0; y < PIXELS_HIGH; ++y) {
         for (int x = 0; x < PIXELS_WIDE; ++x) {
-            Pixel *pixel = GetPixel(pixels, x, y);
+            Pixel *pixel = GetPixel(x, y);
             bmp.set_pixel(x, y, pixel->colour.b, pixel->colour.g, pixel->colour.r);
         }
     }
