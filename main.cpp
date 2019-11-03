@@ -13,7 +13,8 @@ auto rng = std::default_random_engine(std::random_device{}());
 
 int PIXELS_WIDE = 256;
 int PIXELS_HIGH = 256;
-int COLOUR_DEPTH = 128;
+int COLOUR_DEPTH = 256;
+
 
 int getHue(int red, int green, int blue) {
     int fmin = std::min(std::min(red, green), blue);
@@ -93,6 +94,12 @@ std::ostream &operator<<(std::ostream &os, const Point &point) {
     return os << point.x << "," << point.y;
 }
 
+std::vector<Colour> colours;
+std::vector<Pixel> pixels;
+std::list<Point> available_edges;
+std::vector<Point> neighbours(8);
+long colour_index = 0;
+
 int ColourDiff(Colour *colour_1, Colour *colour_2) {
     int r = (int) colour_1->r - (int) colour_2->r;
     int g = (int) colour_1->g - (int) colour_2->g;
@@ -106,7 +113,6 @@ int HueDiff(Colour *colour_1, Colour *colour_2) {
 
 int LuminosityDiff(Colour *colour_1, Colour *colour_2) {
     return abs(colour_1->lum - colour_2->lum);
-//    return abs((colour_1->r + colour_1->g + colour_1->b) - (colour_2->r + colour_2->g + colour_2->b));
 }
 
 Pixel *GetPixel(std::vector<Pixel> &pixels, int x, int y) {
@@ -149,34 +155,82 @@ int FillColours(std::vector<Colour> &colours, int colour_depth) {
     return colours.size();
 }
 
+enum StartType {
+    START_TYPE_CENTRE,
+    START_TYPE_CORNER,
+    START_TYPE_RANDOM,
+    START_TYPE_EDGE
+};
+
+void PlaceAtPoint(Point &point) {
+    available_edges.push_back(point);
+    Pixel *centre_pixel = GetPixelAtPoint(pixels, point);
+    centre_pixel->colour = colours[colour_index];
+    centre_pixel->is_filled = true;
+}
+
 int main(int argc, char *argv[]) {
     int c;
+    auto difference_func = ColourDiff;
     opterr = 0;
-    while ((c = getopt(argc, argv, "h:w:c:")) != -1)
+    StartType start_type = START_TYPE_CENTRE;
+    int num_start_points = 1;
+
+    while ((c = getopt(argc, argv, "h:w:c:d:s:")) != -1)
         switch (c) {
             case 'w':
                 PIXELS_WIDE = (int) strtol(optarg, nullptr, 0);
-                if (PIXELS_WIDE == 0) {
+                if (PIXELS_WIDE <= 0) {
                     std::cout << "Invalid width argument " << optarg << std::endl;
                     return 1;
                 }
                 break;
             case 'h':
                 PIXELS_HIGH = (int) strtol(optarg, nullptr, 0);
-                if (PIXELS_HIGH == 0) {
+                if (PIXELS_HIGH <= 0) {
                     std::cout << "Invalid height argument " << optarg << std::endl;
                     return 1;
                 }
                 break;
             case 'c':
                 COLOUR_DEPTH = (int) strtol(optarg, nullptr, 0);
-                if (COLOUR_DEPTH == 0) {
+                if (COLOUR_DEPTH <= 0) {
                     std::cout << "Invalid colour depth argument " << optarg << std::endl;
                     return 1;
                 }
                 break;
+            case 'd': {
+                std::string diff_type = optarg;
+                if (diff_type == "lum") {
+                    difference_func = LuminosityDiff;
+                } else if (diff_type == "colour" || diff_type == "color") {
+                    difference_func = ColourDiff;
+                } else if (diff_type == "hue") {
+                    difference_func = HueDiff;
+                } else {
+                    std::cout << "Unknown difference type " << diff_type << std::endl;
+                    return 1;
+                }
+                break;
+            }
+            case 's': {
+                std::string start_type_str = optarg;
+                if (start_type_str == "center" || start_type_str == "centre") {
+                    start_type = START_TYPE_CENTRE;
+                } else if (start_type_str == "corner") {
+                    start_type = START_TYPE_CORNER;
+                } else if (start_type_str == "edge") {
+                    start_type = START_TYPE_EDGE;
+                } else if (start_type_str == "random") {
+                    start_type = START_TYPE_RANDOM;
+                } else {
+                    std::cout << "Unknown start type " << start_type_str << std::endl;
+                    return 1;
+                }
+                break;
+            }
             case '?':
-                if (optopt == 'h' || optopt == 'w' || optopt == 'c') {
+                if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd') {
                     fprintf(stderr, "Option -%c requires an argument.\n", optopt);
                 } else if (isprint(optopt)) {
                     fprintf(stderr, "Unknown option `-%c'.\n", optopt);
@@ -186,64 +240,50 @@ int main(int argc, char *argv[]) {
                             optopt);
                 }
                 return 1;
+
             default:
                 abort();
         }
+    for (; optind < argc; optind++) {
+        num_start_points = (int) strtol(argv[optind], nullptr, 0);
+    }
 
     time_t start_time = time(nullptr);
-    std::vector<Colour> colours;
-
-    std::vector<Pixel> pixels(PIXELS_WIDE * PIXELS_HIGH);
-    std::list<Point> available_edges;
-    std::vector<Point> neighbours(8);
-    long colour_index = 0;
+    pixels.resize(PIXELS_WIDE * PIXELS_HIGH);
     long COLOUR_COUNT = FillColours(colours, COLOUR_DEPTH);
-
-    Point centre_point = Point(PIXELS_WIDE / 2, PIXELS_HIGH / 2);
-    available_edges.push_back(centre_point);
-    Pixel *centre_pixel = GetPixelAtPoint(pixels, centre_point);
-    centre_pixel->colour = colours[colour_index];
-    centre_pixel->is_filled = true;
-
-    auto difference_func = ColourDiff;
-
-    /*
-    for (int i = 0; i < 100; ++i) {
-        int rand_x = rng() % PIXELS_WIDE;
-        int rand_y = rng() % PIXELS_HIGH;
-
-        Point random_point = Point(rand_x, rand_y);
-        available_edges.push_back(random_point);
-        Colour* centre_pixel = GetPixelAtPoint(pixels, random_point);
-        centre_pixel->r = colours[colour_index].r;
-        centre_pixel->g = colours[colour_index].g;
-        centre_pixel->b = colours[colour_index].b;
-        centre_pixel->hue = colours[colour_index].hue;
-        centre_pixel->filled = true;
-        colour_index += 1;
+    std::vector<Point> possible_start_points;
+    if(num_start_points <= 0) {
+        num_start_points = INT32_MAX;
     }
-    int i = 0;*/
-    /*for (long y = 0; y < PIXELS_HIGH; ++y) {
-        for (long x = 0; x < PIXELS_WIDE; ++x) {
-            if (x == 0 || y == 0 || x == PIXELS_WIDE - 1 || y == PIXELS_HIGH - 1)
-            //if ((x == 0 || x == PIXELS_WIDE - 1  ) && (y == 0 || y == PIXELS_HIGH - 1))
-            //if (((x == 0 || x == PIXELS_WIDE - 1) && y == PIXELS_HIGH / 2) || ((y == 0 || y == PIXELS_HIGH - 1) && x == PIXELS_WIDE / 2))
-            {
-                //++i;
-                //if (i % 64 == 0)
-                {
-                    Colour* colour = GetPixel(pixels, x, y);
-                    colour->r = colours[colour_index].r;
-                    colour->g = colours[colour_index].g;
-                    colour->b = colours[colour_index].b;
-                    ++colour_index;
-                    colour->filled = true;
-                    available_edges.push_back(Point(x, y));
+
+    switch (start_type) {
+        case START_TYPE_CENTRE: {
+            possible_start_points.emplace_back(Point(PIXELS_WIDE / 2, PIXELS_HIGH / 2));
+            break;
+        }
+        case START_TYPE_CORNER: {
+            possible_start_points.emplace_back(Point(0, 0));
+            possible_start_points.emplace_back(Point(PIXELS_WIDE - 1, 0));
+            possible_start_points.emplace_back(Point(0, PIXELS_HIGH - 1));
+            possible_start_points.emplace_back(Point(PIXELS_WIDE - 1, PIXELS_HIGH - 1));
+            break;
+        }
+        case START_TYPE_EDGE:
+        case START_TYPE_RANDOM:
+            for (int y = 0; y < PIXELS_HIGH; ++y) {
+                for (int x = 0; x < PIXELS_WIDE; ++x) {
+                    if (start_type == START_TYPE_RANDOM ||
+                        (x == 0 || x == PIXELS_WIDE - 1 || y == 0 || y == PIXELS_HIGH - 1)) {
+                        possible_start_points.emplace_back(Point(x, y));
+                    }
                 }
             }
-
-        }
-    }*/
+            break;
+    }
+    std::shuffle(possible_start_points.begin(), possible_start_points.end(), rng);
+    for (int i = 0; i < possible_start_points.size() && i < num_start_points; ++i) {
+        PlaceAtPoint(possible_start_points[i]);
+    }
 
     while (true) {
         if (available_edges.empty() || colour_index == COLOUR_COUNT) {
