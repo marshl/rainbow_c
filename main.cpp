@@ -165,6 +165,7 @@ void PlaceAtPoint(Point &point) {
     Pixel *centre_pixel = GetPixelAtPoint(point);
     centre_pixel->colour = colours[colour_index];
     centre_pixel->is_filled = true;
+    ++colour_index;
 }
 
 int main(int argc, char *argv[]) {
