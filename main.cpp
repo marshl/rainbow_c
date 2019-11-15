@@ -75,6 +75,8 @@ int main(int argc, char *argv[]) {
                     start_type = RainbowRenderer::START_TYPE_EDGE;
                 } else if (start_type_str == "random") {
                     start_type = RainbowRenderer::START_TYPE_RANDOM;
+                } else if (start_type_str == "circle") {
+                    start_type = RainbowRenderer::START_TYPE_CIRCLE;
                 } else {
                     std::cout << "Unknown start type " << start_type_str << std::endl;
                     return 1;

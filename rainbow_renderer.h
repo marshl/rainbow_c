@@ -17,7 +17,8 @@ public:
         START_TYPE_CENTRE,
         START_TYPE_CORNER,
         START_TYPE_RANDOM,
-        START_TYPE_EDGE
+        START_TYPE_EDGE,
+        START_TYPE_CIRCLE,
     };
 
     void setPixelsWide(int _pixels_wide) {
@@ -74,6 +75,41 @@ public:
                     }
                 }
                 break;
+            case START_TYPE_CIRCLE: {
+                int radius = std::min(this->pixels_wide, this->pixels_high) / 4;
+                int f = 1 - radius;
+                int ddF_x = 0;
+                int ddF_y = -2 * radius;
+                int x_offset = 0;
+                int y_offset = radius;
+                int mid_x = this->pixels_wide / 2;
+                int mid_y = this->pixels_high / 2;
+
+                possible_start_points.emplace_back(Point(mid_x, mid_y + radius));
+                possible_start_points.emplace_back(Point(mid_x, mid_y - radius));
+                possible_start_points.emplace_back(Point(mid_x + radius, mid_y));
+                possible_start_points.emplace_back(Point(mid_x - radius, mid_y));
+
+                while (x_offset < y_offset) {
+                    if (f >= 0) {
+                        --y_offset;
+                        ddF_y += 2;
+                        f += ddF_y;
+                    }
+                    x_offset++;
+                    ddF_x += 2;
+                    f += ddF_x + 1;
+                    possible_start_points.emplace_back(Point(mid_x + x_offset, mid_y + y_offset));
+                    possible_start_points.emplace_back(Point(mid_x - x_offset, mid_y + y_offset));
+                    possible_start_points.emplace_back(Point(mid_x + x_offset, mid_y - y_offset));
+                    possible_start_points.emplace_back(Point(mid_x - x_offset, mid_y - y_offset));
+                    possible_start_points.emplace_back(Point(mid_x + y_offset, mid_y + x_offset));
+                    possible_start_points.emplace_back(Point(mid_x - y_offset, mid_y + x_offset));
+                    possible_start_points.emplace_back(Point(mid_x + y_offset, mid_y - x_offset));
+                    possible_start_points.emplace_back(Point(mid_x - y_offset, mid_y - x_offset));
+                }
+                break;
+            }
         }
         std::shuffle(possible_start_points.begin(), possible_start_points.end(), rng);
         for (int i = 0; i < possible_start_points.size() && i < num_start_points; ++i) {
@@ -129,7 +165,7 @@ public:
 
     /// Writes the current content of the pixel board out to file
     /// \param _filename
-    void writeToFile(const std::string& _filename) {
+    void writeToFile(const std::string &_filename) {
         BMP bmp = BMP(this->pixels_wide, this->pixels_high, false);
         for (int y = 0; y < this->pixels_high; ++y) {
             for (int x = 0; x < this->pixels_wide; ++x) {
