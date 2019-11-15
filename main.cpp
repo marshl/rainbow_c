@@ -1,16 +1,11 @@
 #include <iostream>
 #include <cstdlib>
 #include <list>
-#include <algorithm>
 #include <random>
 #include <ctime>
 #include <unistd.h>
 
-#include "bmp.h"
-
 #include "colour.h"
-#include "pixel.h"
-#include "point.h"
 #include "rainbow_renderer.h"
 
 /// Program entrypoint

@@ -4,6 +4,7 @@
 #include <vector>
 #include <list>
 
+#include "bmp.h"
 #include "colour.h"
 #include "pixel.h"
 #include "point.h"
@@ -43,6 +44,103 @@ public:
         this->start_type = _start_type;
     }
 
+    /// Initialises starting pixels
+    void init() {
+
+        pixels.resize(this->pixels_wide * this->pixels_high);
+        this->fillColours();
+        std::vector<Point> possible_start_points;
+
+        switch (start_type) {
+            case START_TYPE_CENTRE: {
+                possible_start_points.emplace_back(Point(this->pixels_wide / 2, this->pixels_high / 2));
+                break;
+            }
+            case START_TYPE_CORNER: {
+                possible_start_points.emplace_back(Point(0, 0));
+                possible_start_points.emplace_back(Point(this->pixels_wide - 1, 0));
+                possible_start_points.emplace_back(Point(0, this->pixels_high - 1));
+                possible_start_points.emplace_back(Point(this->pixels_wide - 1, this->pixels_high - 1));
+                break;
+            }
+            case START_TYPE_EDGE:
+            case START_TYPE_RANDOM:
+                for (int y = 0; y < this->pixels_high; ++y) {
+                    for (int x = 0; x < this->pixels_wide; ++x) {
+                        if (start_type == START_TYPE_RANDOM ||
+                            (x == 0 || x == this->pixels_wide - 1 || y == 0 || y == this->pixels_high - 1)) {
+                            possible_start_points.emplace_back(Point(x, y));
+                        }
+                    }
+                }
+                break;
+        }
+        std::shuffle(possible_start_points.begin(), possible_start_points.end(), rng);
+        for (int i = 0; i < possible_start_points.size() && i < num_start_points; ++i) {
+            fillPoint(possible_start_points[i]);
+        }
+    }
+
+    /// Fills reminaing spaces with pixels
+    void fill() {
+        while (true) {
+            if (available_edges.empty() || colour_index == this->colours.size()) {
+                std::cout << "Out of edges or colours" << std::endl;
+                break;
+            }
+            Colour *current_colour = &colours[colour_index];
+            Point best_point;
+            int best_difference = INT32_MAX;
+            for (auto &available_edge : available_edges) {
+                int diff = this->difference_function(current_colour, &getPixelAtPoint(available_edge)->colour);
+                if (diff < best_difference) {
+                    best_point = available_edge;
+                    best_difference = diff;
+                }
+            }
+
+            int neighbour_count = getNeighboursOfPoint(best_point);
+            std::shuffle(std::begin(neighbours), std::end(neighbours), rng);
+            int neighbour_index = 0;
+            for (; neighbour_index < neighbour_count; ++neighbour_index) {
+                Point &neighbour = neighbours[neighbour_index];
+                Pixel *neighbour_pixel = getPixelAtPoint(neighbour);
+                if (neighbour_pixel->is_filled) {
+                    continue;
+                }
+                neighbour_pixel->colour = *current_colour;
+                neighbour_pixel->is_filled = true;
+                available_edges.push_back(neighbour);
+                ++colour_index;
+
+                if (colour_index % 1000 == 0) {
+                    std::cout << colour_index << ": " << available_edges.size() << " ("
+                              << ((float) colour_index / float(this->pixels_high * this->pixels_wide) * 100) << "%)"
+                              << std::endl;
+                }
+                break;
+            }
+
+            if (neighbour_index == neighbour_count) {
+                available_edges.remove(best_point);
+            }
+        }
+    }
+
+    /// Writes the current content of the pixel board out to file
+    /// \param _filename
+    void writeToFile(const std::string& _filename) {
+        BMP bmp = BMP(this->pixels_wide, this->pixels_high, false);
+        for (int y = 0; y < this->pixels_high; ++y) {
+            for (int x = 0; x < this->pixels_wide; ++x) {
+                Pixel *pixel = getPixel(x, y);
+                bmp.set_pixel(x, y, pixel->colour.b, pixel->colour.g, pixel->colour.r);
+            }
+        }
+        bmp.write(_filename.c_str());
+    }
+
+private:
 
     int pixels_wide = 256;
     int pixels_high = 256;
@@ -120,97 +218,6 @@ public:
         ++this->colour_index;
     }
 
-    void init() {
-
-        pixels.resize(this->pixels_wide * this->pixels_high);
-        this->fillColours();
-        std::vector<Point> possible_start_points;
-
-        switch (start_type) {
-            case START_TYPE_CENTRE: {
-                possible_start_points.emplace_back(Point(this->pixels_wide / 2, this->pixels_high / 2));
-                break;
-            }
-            case START_TYPE_CORNER: {
-                possible_start_points.emplace_back(Point(0, 0));
-                possible_start_points.emplace_back(Point(this->pixels_wide - 1, 0));
-                possible_start_points.emplace_back(Point(0, this->pixels_high - 1));
-                possible_start_points.emplace_back(Point(this->pixels_wide - 1, this->pixels_high - 1));
-                break;
-            }
-            case START_TYPE_EDGE:
-            case START_TYPE_RANDOM:
-                for (int y = 0; y < this->pixels_high; ++y) {
-                    for (int x = 0; x < this->pixels_wide; ++x) {
-                        if (start_type == START_TYPE_RANDOM ||
-                            (x == 0 || x == this->pixels_wide - 1 || y == 0 || y == this->pixels_high - 1)) {
-                            possible_start_points.emplace_back(Point(x, y));
-                        }
-                    }
-                }
-                break;
-        }
-        std::shuffle(possible_start_points.begin(), possible_start_points.end(), rng);
-        for (int i = 0; i < possible_start_points.size() && i < num_start_points; ++i) {
-            fillPoint(possible_start_points[i]);
-        }
-    }
-
-    void fill() {
-        while (true) {
-            if (available_edges.empty() || colour_index == this->colours.size()) {
-                std::cout << "Out of edges or colours" << std::endl;
-                break;
-            }
-            Colour *current_colour = &colours[colour_index];
-            Point best_point;
-            int best_difference = INT32_MAX;
-            for (auto &available_edge : available_edges) {
-                int diff = this->difference_function(current_colour, &getPixelAtPoint(available_edge)->colour);
-                if (diff < best_difference) {
-                    best_point = available_edge;
-                    best_difference = diff;
-                }
-            }
-
-            int neighbour_count = getNeighboursOfPoint(best_point);
-            std::shuffle(std::begin(neighbours), std::end(neighbours), rng);
-            int neighbour_index = 0;
-            for (; neighbour_index < neighbour_count; ++neighbour_index) {
-                Point &neighbour = neighbours[neighbour_index];
-                Pixel *neighbour_pixel = getPixelAtPoint(neighbour);
-                if (neighbour_pixel->is_filled) {
-                    continue;
-                }
-                neighbour_pixel->colour = *current_colour;
-                neighbour_pixel->is_filled = true;
-                available_edges.push_back(neighbour);
-                ++colour_index;
-
-                if (colour_index % 1000 == 0) {
-                    std::cout << colour_index << ": " << available_edges.size() << " ("
-                              << ((float) colour_index / float(this->pixels_high * this->pixels_wide) * 100) << "%)"
-                              << std::endl;
-                }
-                break;
-            }
-
-            if (neighbour_index == neighbour_count) {
-                available_edges.remove(best_point);
-            }
-        }
-    }
-
-    void writeToFile(std::string _filename) {
-        BMP bmp = BMP(this->pixels_wide, this->pixels_high, false);
-        for (int y = 0; y < this->pixels_high; ++y) {
-            for (int x = 0; x < this->pixels_wide; ++x) {
-                Pixel *pixel = getPixel(x, y);
-                bmp.set_pixel(x, y, pixel->colour.b, pixel->colour.g, pixel->colour.r);
-            }
-        }
-        bmp.write(_filename.c_str());
-    }
 };
 
 #endif //RAINBOW_C_RAINBOW_RENDERER_H
