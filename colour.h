@@ -77,4 +77,12 @@ int getColourLuminosityDiff(Colour *colour_1, Colour *colour_2) {
     return abs(colour_1->lum - colour_2->lum);
 }
 
+bool compareHue(const Colour& c1, const Colour& c2) {
+    return c1.hue < c2.hue;
+}
+
+bool compareLum(const Colour& c1, const Colour& c2) {
+    return c1.lum < c2.lum;
+}
+
 #endif //RAINBOW_C_COLOUR_H

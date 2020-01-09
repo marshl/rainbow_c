@@ -48,12 +48,11 @@ public:
 
     /// Initialises starting pixels
     void init() {
-
-        pixels.resize(this->pixels_wide * this->pixels_high);
+        this->pixels.resize(this->pixels_wide * this->pixels_high);
         this->fillColours();
         std::vector<Point> possible_start_points;
 
-        switch (start_type) {
+        switch (this->start_type) {
             case START_TYPE_CENTRE: {
                 possible_start_points.emplace_back(Point(this->pixels_wide / 2, this->pixels_high / 2));
                 break;
@@ -112,23 +111,25 @@ public:
                 break;
             }
         }
-        std::shuffle(possible_start_points.begin(), possible_start_points.end(), rng);
-        for (int i = 0; i < possible_start_points.size() && i < num_start_points; ++i) {
+
+        std::shuffle(possible_start_points.begin(), possible_start_points.end(), this->rng);
+        for (int i = 0; i < possible_start_points.size() && i < this->num_start_points; ++i) {
             fillPoint(possible_start_points[i]);
         }
     }
 
-    /// Fills reminaing spaces with pixels
+    /// Fills remaining spaces with pixels
     void fill() {
+        int partition = this->pixels_high * this->pixels_wide / 100;
         while (true) {
             if (this->available_edges.empty() || this->colour_index == this->colours.size()) {
                 std::cout << "Out of edges or colours" << std::endl;
                 break;
             }
-            Colour *current_colour = &colours[colour_index];
+            Colour *current_colour = &this->colours[this->colour_index];
             Point best_point;
             int best_difference = INT32_MAX;
-            for (auto &available_edge : available_edges) {
+            for (auto &available_edge : this->available_edges) {
                 int diff = this->difference_function(current_colour, &getPixelAtPoint(available_edge)->colour);
                 if (diff < best_difference) {
                     best_point = available_edge;
@@ -137,29 +138,56 @@ public:
             }
 
             int neighbour_count = getNeighboursOfPoint(best_point);
-            std::shuffle(std::begin(neighbours), std::end(neighbours), rng);
+            std::shuffle(std::begin(this->neighbours), std::end(this->neighbours), this->rng);
             int neighbour_index = 0;
             for (; neighbour_index < neighbour_count; ++neighbour_index) {
-                Point &neighbour = neighbours[neighbour_index];
+                Point &neighbour = this->neighbours[neighbour_index];
                 Pixel *neighbour_pixel = getPixelAtPoint(neighbour);
                 if (neighbour_pixel->is_filled) {
                     continue;
                 }
                 neighbour_pixel->colour = *current_colour;
                 neighbour_pixel->is_filled = true;
-                available_edges.push_back(neighbour);
-                ++colour_index;
+                this->available_edges.push_back(neighbour);
+                ++this->colour_index;
 
-                if (colour_index % 1000 == 0) {
-                    std::cout << colour_index << ": " << available_edges.size() << " ("
-                              << ((float) colour_index / float(this->pixels_high * this->pixels_wide) * 100) << "%)"
+                if (this->colour_index % partition == 0) {
+                    std::cout << "Step " << this->colour_index << " with " << this->available_edges.size() << " edges ("
+                              << ((float) this->colour_index / float(this->pixels_high * this->pixels_wide) * 100)
+                              << "%)"
                               << std::endl;
+                    std::ostringstream stream;
+                    stream << "output_" << this->colour_index << ".bmp";
+                    std::cout << "Saving..." << std::flush;
+                    this->writeToFile(stream.str());
+                    std::cout << "Done" << std::endl;
+
+                    std::cout << "Cleaning " << std::flush;
+                    auto iter = this->available_edges.begin();
+                    while (iter != this->available_edges.end()) {
+                        Point edgePoint = *iter;
+                        neighbour_count = getNeighboursOfPoint(edgePoint);
+                        int openNeighbours = 0;
+                        for (int i = 0; i < neighbour_count; ++i) {
+                            Pixel *n = getPixelAtPoint(neighbour);
+                            if (!n->is_filled) {
+                                openNeighbours += 1;
+                                break;
+                            }
+                        }
+                        if (openNeighbours == 0) {
+                            iter = this->available_edges.erase(iter);
+                        } else {
+                            ++iter;
+                        }
+                    }
+                    std::cout << "Done" << std::endl;
                 }
                 break;
             }
 
             if (neighbour_index == neighbour_count) {
-                available_edges.remove(best_point);
+                this->available_edges.remove(best_point);
             }
         }
     }
@@ -204,14 +232,14 @@ private:
     /// Gets the pixel at the given point
     /// \param point The point
     /// \return The pixel at that point
-    Pixel *getPixelAtPoint(Point &point) {
+    Pixel *getPixelAtPoint(const Point &point) {
         return &this->pixels[point.y * this->pixels_wide + point.x];
     }
 
     /// Gets the neighbour positions of the given point (points over the edge of the board aren ot returned)
     /// \param point The point to find the neighbours for
     /// \return The number of neighbours
-    int getNeighboursOfPoint(Point point) {
+    int getNeighboursOfPoint(const Point &point) {
         neighbours.clear();
         for (int y = -1; y <= 1; ++y) {
             if (y + point.y < 0 || y + point.y >= this->pixels_high) {
