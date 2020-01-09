@@ -167,15 +167,16 @@ public:
                     while (iter != this->available_edges.end()) {
                         Point edgePoint = *iter;
                         neighbour_count = getNeighboursOfPoint(edgePoint);
-                        int openNeighbours = 0;
+                        bool hasOpenNeighbours = false;
                         for (int i = 0; i < neighbour_count; ++i) {
-                            Pixel *n = getPixelAtPoint(neighbour);
+                            Point& p = neighbours[i];
+                            Pixel *n = getPixelAtPoint(p);
                             if (!n->is_filled) {
-                                openNeighbours += 1;
+                                hasOpenNeighbours = true;
                                 break;
                             }
                         }
-                        if (openNeighbours == 0) {
+                        if (!hasOpenNeighbours) {
                             iter = this->available_edges.erase(iter);
                         } else {
                             ++iter;
@@ -273,12 +274,12 @@ private:
                 }
             }
         }
-        std::shuffle(std::begin(colours), std::end(colours), rng);
+//        std::shuffle(std::begin(colours), std::end(colours), rng);
 
         std::cout << "depth: " << this->colour_depth << " = " << this->colours.size() << " actual "
                   << (this->pixels_wide * this->pixels_high) << std::endl;
-//        std::sort(std::begin(colours), std::end(colours), compareLum);
-//        std::sort(std::begin(colours), std::end(colours), compareHue);
+        std::sort(std::begin(colours), std::end(colours), compareLum);
+        std::sort(std::begin(colours), std::end(colours), compareHue);
     }
 
 
