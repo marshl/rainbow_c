@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <list>
+#include <sstream>
 
 #include "bmp.h"
 #include "colour.h"
@@ -120,7 +121,7 @@ public:
     /// Fills reminaing spaces with pixels
     void fill() {
         while (true) {
-            if (available_edges.empty() || colour_index == this->colours.size()) {
+            if (this->available_edges.empty() || this->colour_index == this->colours.size()) {
                 std::cout << "Out of edges or colours" << std::endl;
                 break;
             }
@@ -180,7 +181,7 @@ private:
 
     int pixels_wide = 256;
     int pixels_high = 256;
-    int colour_depth = 256;
+    int colour_depth = 0;
     int num_start_points = INT32_MAX;
     StartType start_type = StartType::START_TYPE_CENTRE;
 
@@ -231,6 +232,10 @@ private:
     /// Fills the list of random colours
     /// \param colour_depth The number of each unique colours in each channel
     void fillColours() {
+        if (this->colour_depth == 0) {
+            this->colour_depth = ceil(pow(this->pixels_wide * this->pixels_high, 1.0f / 3.0f));
+        }
+
         for (int r = 0; r < this->colour_depth; ++r) {
             for (int g = 0; g < this->colour_depth; ++g) {
                 for (int b = 0; b < this->colour_depth; ++b) {
@@ -241,6 +246,11 @@ private:
             }
         }
         std::shuffle(std::begin(colours), std::end(colours), rng);
+
+        std::cout << "depth: " << this->colour_depth << " = " << this->colours.size() << " actual "
+                  << (this->pixels_wide * this->pixels_high) << std::endl;
+//        std::sort(std::begin(colours), std::end(colours), compareLum);
+//        std::sort(std::begin(colours), std::end(colours), compareHue);
     }
 
 
