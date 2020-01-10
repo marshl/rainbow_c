@@ -62,26 +62,26 @@ std::ostream &operator<<(std::ostream &os, const Colour &colour) {
     return os << (int) colour.r << "," << (int) colour.g << "," << (int) colour.b;
 }
 
-int getColourAbsoluteDiff(Colour *colour_1, Colour *colour_2) {
+int getColourAbsoluteDiff(const Colour *const colour_1, const Colour *const colour_2) {
     int r = (int) colour_1->r - (int) colour_2->r;
     int g = (int) colour_1->g - (int) colour_2->g;
     int b = (int) colour_1->b - (int) colour_2->b;
     return r * r + g * g + b * b;
 }
 
-int getColourHueDiff(Colour *colour_1, Colour *colour_2) {
+int getColourHueDiff(const Colour *const colour_1, const Colour *const colour_2) {
     return abs(colour_1->hue - colour_2->hue);
 }
 
-int getColourLuminosityDiff(Colour *colour_1, Colour *colour_2) {
+int getColourLuminosityDiff(const Colour *const colour_1, const Colour *const colour_2) {
     return abs(colour_1->lum - colour_2->lum);
 }
 
-bool compareHue(const Colour& c1, const Colour& c2) {
+bool compareHue(const Colour &c1, const Colour &c2) {
     return c1.hue < c2.hue;
 }
 
-bool compareLum(const Colour& c1, const Colour& c2) {
+bool compareLum(const Colour &c1, const Colour &c2) {
     return c1.lum < c2.lum;
 }
 

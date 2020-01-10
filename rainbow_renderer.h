@@ -38,7 +38,7 @@ public:
         this->colour_depth = _colour_depth;
     }
 
-    void setDifferenceFunction(int (*_func)(Colour *, Colour *)) {
+    void setDifferenceFunction(int (*_func)(const Colour *const, const Colour *const)) {
         this->difference_function = _func;
     }
 
@@ -137,12 +137,13 @@ public:
                 }
             }
 
-            int neighbour_count = getNeighboursOfPoint(best_point);
-            std::shuffle(std::begin(this->neighbours), std::end(this->neighbours), this->rng);
+            auto neighbours = getNeighboursOfPoint(best_point);
+            int neighbour_count = neighbours.size();
+            std::shuffle(std::begin(neighbours), std::end(neighbours), this->rng);
             int neighbour_index = 0;
             for (; neighbour_index < neighbour_count; ++neighbour_index) {
-                Point &neighbour = this->neighbours[neighbour_index];
-                Pixel *neighbour_pixel = getPixelAtPoint(neighbour);
+                Point &neighbour = neighbours[neighbour_index];
+                Pixel *const neighbour_pixel = getPixelAtPoint(neighbour);
                 if (neighbour_pixel->is_filled) {
                     continue;
                 }
@@ -161,28 +162,7 @@ public:
                     std::cout << "Saving..." << std::flush;
                     this->writeToFile(stream.str());
                     std::cout << "Done" << std::endl;
-
-                    std::cout << "Cleaning " << std::flush;
-                    auto iter = this->available_edges.begin();
-                    while (iter != this->available_edges.end()) {
-                        Point edgePoint = *iter;
-                        neighbour_count = getNeighboursOfPoint(edgePoint);
-                        bool hasOpenNeighbours = false;
-                        for (int i = 0; i < neighbour_count; ++i) {
-                            Point& p = neighbours[i];
-                            Pixel *n = getPixelAtPoint(p);
-                            if (!n->is_filled) {
-                                hasOpenNeighbours = true;
-                                break;
-                            }
-                        }
-                        if (!hasOpenNeighbours) {
-                            iter = this->available_edges.erase(iter);
-                        } else {
-                            ++iter;
-                        }
-                    }
-                    std::cout << "Done" << std::endl;
+                    this->cleanFilledEdges();
                 }
                 break;
             }
@@ -206,6 +186,29 @@ public:
         bmp.write(_filename.c_str());
     }
 
+    void cleanFilledEdges() {
+        std::cout << "Cleaning " << std::flush;
+        auto iter = this->available_edges.begin();
+        while (iter != this->available_edges.end()) {
+            Point edgePoint = *iter;
+            auto neighbours = getNeighboursOfPoint(edgePoint);
+            bool hasOpenNeighbours = false;
+            for (auto &neighbour_point : neighbours) {
+                const Pixel *neighbour_pixel = getPixelAtPoint(neighbour_point);
+                if (!neighbour_pixel->is_filled) {
+                    hasOpenNeighbours = true;
+                    break;
+                }
+            }
+            if (!hasOpenNeighbours) {
+                iter = this->available_edges.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+        std::cout << "Done" << std::endl;
+    }
+
 private:
 
     int pixels_wide = 256;
@@ -214,12 +217,11 @@ private:
     int num_start_points = INT32_MAX;
     StartType start_type = StartType::START_TYPE_CENTRE;
 
-    int (*difference_function)(Colour *, Colour *) = getColourAbsoluteDiff;
+    int (*difference_function)(const Colour *const, const Colour *const) = getColourAbsoluteDiff;
 
     std::vector<Colour> colours;
     std::vector<Pixel> pixels;
     std::list<Point> available_edges;
-    std::vector<Point> neighbours;
     long colour_index = 0;
 
     /// Get the pixel at the given x and y coordinates
@@ -240,8 +242,8 @@ private:
     /// Gets the neighbour positions of the given point (points over the edge of the board aren ot returned)
     /// \param point The point to find the neighbours for
     /// \return The number of neighbours
-    int getNeighboursOfPoint(const Point &point) {
-        neighbours.clear();
+    std::vector<Point> getNeighboursOfPoint(const Point &point) const {
+        std::vector<Point> neighbours;
         for (int y = -1; y <= 1; ++y) {
             if (y + point.y < 0 || y + point.y >= this->pixels_high) {
                 continue;
@@ -255,7 +257,7 @@ private:
                 neighbours.emplace_back(Point(x + point.x, y + point.y));
             }
         }
-        return neighbours.size();
+        return neighbours;
     }
 
     /// Fills the list of random colours

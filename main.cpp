@@ -15,7 +15,7 @@
 int main(int argc, char *argv[]) {
 
     opterr = 0;
-    RainbowRenderer::StartType start_type = RainbowRenderer::START_TYPE_CENTRE;
+    RainbowRenderer::StartType start_type;
 
     auto rainbow_renderer = new RainbowRenderer();
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
             }
             case 'd': {
                 std::string diff_type = optarg;
-                int (*difference_func)(Colour *, Colour *);
+                int (*difference_func)(const Colour *const , const Colour *const );
                 if (diff_type == "lum") {
                     difference_func = getColourLuminosityDiff;
                 } else if (diff_type == "colour" || diff_type == "color") {
