@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
             }
             case 'd': {
                 std::string diff_type = optarg;
-                int (*difference_func)(const Colour *const , const Colour *const );
+                float (*difference_func)(const Colour *const , const Colour *const );
                 if (diff_type == "lum") {
                     difference_func = getColourLuminosityDiff;
                 } else if (diff_type == "colour" || diff_type == "color") {
@@ -109,7 +109,8 @@ int main(int argc, char *argv[]) {
 
     time_t start_time = time(nullptr);
     rainbow_renderer->init();
-    rainbow_renderer->fill();
+//    rainbow_renderer->fill();
+    rainbow_renderer->fill2();
     time_t end_time = time(nullptr);
     std::cout << "Completed in " << (end_time - start_time) << "s" << std::endl;
 

@@ -18,8 +18,12 @@ struct Point {
         this->y = _y;
     }
 
-    bool operator==(const Point &other) {
+    bool operator==(const Point &other) const {
         return other.x == this->x && other.y == this->y;
+    }
+
+    bool operator < (const Point& other) const {
+        return other.x < this->x || other.y < this->y;
     }
 };
 

@@ -7,6 +7,7 @@
 struct Pixel {
     Colour colour = Colour(0,0,0);
     bool is_filled = false;
+    bool is_available = false;
 };
 
 #endif //RAINBOW_C_PIXEL_H

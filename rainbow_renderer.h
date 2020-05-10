@@ -38,7 +38,7 @@ public:
         this->colour_depth = _colour_depth;
     }
 
-    void setDifferenceFunction(int (*_func)(const Colour *const, const Colour *const)) {
+    void setDifferenceFunction(float (*_func)(const Colour *const, const Colour *const)) {
         this->difference_function = _func;
     }
 
@@ -173,6 +173,98 @@ public:
         }
     }
 
+    void fill2() {
+        const int total_pixels = this->pixels_high * this->pixels_wide;
+        const int partition = total_pixels / 100;
+        // List of places where pixels can be placed (next to neighbours)
+        std::list<Point> availablePoints;
+        // Find all neighbours of existing points and add them to the available list
+        for (int y = 0; y < this->pixels_high; ++y) {
+            for (int x = 0; x < this->pixels_wide; ++x) {
+                Point point = Point(x, y);
+                Pixel *pixel = this->getPixelAtPoint(point);
+                if (!pixel->is_filled) {
+                    continue;
+                }
+                for (auto neighbour: this->getNeighboursOfPoint(point)) {
+                    Pixel *neighbour_pixel = this->getPixelAtPoint(neighbour);
+                    if (!neighbour_pixel->is_filled && !neighbour_pixel->is_available) {
+                        this->getPixelAtPoint(neighbour)->is_available = true;
+                        availablePoints.push_back(neighbour);
+                    }
+                }
+            }
+        }
+
+        // While there are colours to place and avaialable spots to place them
+        for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
+            Colour& colour = this->colours[colour_index];
+            Point best_point;
+            int best_difference = INT32_MAX;
+            // Find the point that has neighbours that are closest
+            for (auto point: availablePoints) {
+                int neighbourDiff = this->getNeighbourDifference(point, colour);
+                if (neighbourDiff < best_difference) {
+//                    std::cout << "New best diff " << neighbourDiff << " " << point << std::endl;
+                    best_difference = neighbourDiff;
+                    best_point = point;
+                }
+            }
+            Pixel *pixel = this->getPixelAtPoint(best_point);
+            pixel->is_filled = true;
+            pixel->is_available = false;
+            pixel->colour = colour;
+            availablePoints.remove(best_point);
+
+            for (auto neighbour: this->getNeighboursOfPoint(best_point)) {
+                Pixel *neighbourPixel = this->getPixelAtPoint(neighbour);
+                if (!neighbourPixel->is_filled && !neighbourPixel->is_available) {
+                    neighbourPixel->is_available = true;
+                    availablePoints.push_back(neighbour);
+                }
+            }
+
+            if (this->colour_index % partition == 0) {
+                std::cout << "Placed " << this->colour_index << "/" << total_pixels << " pixels ( "
+                          << ((float) this->colour_index / float(total_pixels) * 100) << "%) with " << availablePoints.size()
+                          << " spaces available"
+                          << std::endl;
+                std::ostringstream stream;
+                stream << "output_" << this->colour_index << ".bmp";
+                std::cout << "Saving..." << std::flush;
+                this->writeToFile(stream.str());
+                std::cout << "Done" << std::endl;
+            }
+
+        }
+    }
+
+    int getNeighbourDifference(Point point, const Colour &colour) {
+        std::vector<int> diffs;
+        for (auto neighbour : this->getNeighboursOfPoint(point)) {
+            const Pixel *pixel = this->getPixelAtPoint(neighbour);
+            if (!pixel->is_filled) {
+                continue;
+            }
+            int diff = this->difference_function(&colour, &pixel->colour);
+//            std::cout << "Diff " << diff;
+            diffs.push_back(diff);
+        }
+//        return 5;
+        if (diffs.empty()) {
+            return INT32_MAX;
+        }
+
+        return *std::min_element(diffs.begin(), diffs.end());
+//        return (int) (std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
+        // average or minimum selection
+//        if (AVERAGE)
+//            return (int)diffs.Average();
+//        else
+//            return diffs.Min();
+    }
+
+
     /// Writes the current content of the pixel board out to file
     /// \param _filename
     void writeToFile(const std::string &_filename) {
@@ -217,7 +309,7 @@ private:
     int num_start_points = INT32_MAX;
     StartType start_type = StartType::START_TYPE_CENTRE;
 
-    int (*difference_function)(const Colour *const, const Colour *const) = getColourAbsoluteDiff;
+    float (*difference_function)(const Colour *const, const Colour *const) = getColourAbsoluteDiff;
 
     std::vector<Colour> colours;
     std::vector<Pixel> pixels;
@@ -282,6 +374,8 @@ private:
                   << (this->pixels_wide * this->pixels_high) << std::endl;
         std::sort(std::begin(colours), std::end(colours), compareLum);
         std::sort(std::begin(colours), std::end(colours), compareHue);
+        std::sort(std::begin(colours), std::end(colours), compareSat);
+        std::reverse(std::begin(colours), std::end(colours));
     }
 
 
