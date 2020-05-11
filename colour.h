@@ -7,40 +7,6 @@
 #include <algorithm>
 #include <iostream>
 
-/// Gets the hue of a given RGB value
-int getHue(int red, int green, int blue) {
-    int fmin = std::min(std::min(red, green), blue);
-    int fmax = std::max(std::max(red, green), blue);
-
-    if (fmin == fmax) {
-        return 0;
-    }
-
-    float hue = 0;
-    if (fmax == red) {
-        hue = float(green - blue) / float(fmax - fmin);
-    } else if (fmax == green) {
-        hue = 2 + float(blue - red) / float(fmax - fmin);
-    } else {
-        hue = 4 + float(red - green) / float(fmax - fmin);
-    }
-
-    hue = hue * 60.0f;
-    if (hue < 0.0f) {
-        hue = hue + 360.0f;
-    }
-    return int(hue);
-}
-
-/// Gets the luminosity of given RGB value
-/// \param r
-/// \param g
-/// \param b
-/// \return
-int getLum(int r, int g, int b) {
-    return (std::max(r, std::max(g, b)) + std::min(r, std::min(g, b))) / 2;
-}
-
 
 std::tuple<float, float, float> rgbToHsl(int pR, int pG, int pB) {
     float r = (float) pR / 255;
@@ -88,9 +54,7 @@ struct Colour {
         this->r = _r;
         this->g = _g;
         this->b = _b;
-//        this->hue = getHue(_r, _g, _b);
-//        this->lum = getLum(_r, _g, _b);
-        auto t = rgbToHsl(_r, _g, _b);
+        const auto t = rgbToHsl(_r, _g, _b);
         this->hue = std::get<0>(t);
         this->sat = std::get<1>(t);
         this->lum = std::get<2>(t);

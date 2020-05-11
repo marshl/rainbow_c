@@ -68,7 +68,7 @@ public:
             case START_TYPE_RANDOM:
                 for (int y = 0; y < this->pixels_high; ++y) {
                     for (int x = 0; x < this->pixels_wide; ++x) {
-                        if (start_type == START_TYPE_RANDOM ||
+                        if (this->start_type == START_TYPE_RANDOM ||
                             (x == 0 || x == this->pixels_wide - 1 || y == 0 || y == this->pixels_high - 1)) {
                             possible_start_points.emplace_back(Point(x, y));
                         }
@@ -76,7 +76,8 @@ public:
                 }
                 break;
             case START_TYPE_CIRCLE: {
-                int radius = std::min(this->pixels_wide, this->pixels_high) / 4;
+                // Make a circle such that the inner area and outer area are the same (for a square board)
+                int radius = int(float(std::min(this->pixels_wide, this->pixels_high)) / sqrt(2 * M_PI));
                 int f = 1 - radius;
                 int ddF_x = 0;
                 int ddF_y = -2 * radius;
@@ -119,7 +120,7 @@ public:
     }
 
     /// Fills remaining spaces with pixels
-    void fill() {
+    void edge_fill() {
         int partition = this->pixels_high * this->pixels_wide / 100;
         while (true) {
             if (this->available_edges.empty() || this->colour_index == this->colours.size()) {
@@ -173,7 +174,7 @@ public:
         }
     }
 
-    void fill2() {
+    void neighbour_fill() {
         const int total_pixels = this->pixels_high * this->pixels_wide;
         const int partition = total_pixels / 100;
         // List of places where pixels can be placed (next to neighbours)

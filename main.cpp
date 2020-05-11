@@ -109,8 +109,8 @@ int main(int argc, char *argv[]) {
 
     time_t start_time = time(nullptr);
     rainbow_renderer->init();
-//    rainbow_renderer->fill();
-    rainbow_renderer->fill2();
+    rainbow_renderer->edge_fill();
+//    rainbow_renderer->neighbour_fill();
     time_t end_time = time(nullptr);
     std::cout << "Completed in " << (end_time - start_time) << "s" << std::endl;
 
