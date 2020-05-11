@@ -22,6 +22,12 @@ public:
         START_TYPE_CIRCLE,
     };
 
+    enum FillMode {
+        FILL_MODE_NEIGHBOUR,
+        FILL_MODE_EDGE,
+        FILL_MODE_NEIGHBOUR_AVERAGE,
+    };
+
     void setPixelsWide(int _pixels_wide) {
         this->pixels_wide = _pixels_wide;
     }
@@ -44,6 +50,10 @@ public:
 
     void setStartType(StartType _start_type) {
         this->start_type = _start_type;
+    }
+
+    void setFillMode(FillMode _fill_mode) {
+        this->fill_mode = _fill_mode;
     }
 
     /// Initialises starting pixels
@@ -119,6 +129,20 @@ public:
         }
     }
 
+    void fill() {
+        switch(this->fill_mode) {
+            case FILL_MODE_EDGE:
+                this->edge_fill();
+                break;
+            case FILL_MODE_NEIGHBOUR:
+                this->neighbour_fill();
+                break;
+            case FILL_MODE_NEIGHBOUR_AVERAGE:
+                this->neighbour_fill(true);
+                break;
+        }
+    }
+
     /// Fills remaining spaces with pixels
     void edge_fill() {
         int partition = this->pixels_high * this->pixels_wide / 100;
@@ -129,9 +153,9 @@ public:
             }
             Colour *current_colour = &this->colours[this->colour_index];
             Point best_point;
-            int best_difference = INT32_MAX;
+            float best_difference = MAXFLOAT;
             for (auto &available_edge : this->available_edges) {
-                int diff = this->difference_function(current_colour, &getPixelAtPoint(available_edge)->colour);
+                float diff = this->difference_function(current_colour, &getPixelAtPoint(available_edge)->colour);
                 if (diff < best_difference) {
                     best_point = available_edge;
                     best_difference = diff;
@@ -174,7 +198,7 @@ public:
         }
     }
 
-    void neighbour_fill() {
+    void neighbour_fill(bool neighbour_average=false) {
         const int total_pixels = this->pixels_high * this->pixels_wide;
         const int partition = total_pixels / 100;
         // List of places where pixels can be placed (next to neighbours)
@@ -201,12 +225,11 @@ public:
         for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
             Colour& colour = this->colours[colour_index];
             Point best_point;
-            int best_difference = INT32_MAX;
+            float best_difference = MAXFLOAT;
             // Find the point that has neighbours that are closest
             for (auto point: availablePoints) {
-                int neighbourDiff = this->getNeighbourDifference(point, colour);
+                float neighbourDiff = this->getNeighbourDifference(point, colour, neighbour_average=neighbour_average);
                 if (neighbourDiff < best_difference) {
-//                    std::cout << "New best diff " << neighbourDiff << " " << point << std::endl;
                     best_difference = neighbourDiff;
                     best_point = point;
                 }
@@ -240,29 +263,26 @@ public:
         }
     }
 
-    int getNeighbourDifference(Point point, const Colour &colour) {
-        std::vector<int> diffs;
+    float getNeighbourDifference(Point point, const Colour &colour, bool neighbour_average=false) {
+        std::vector<float> diffs;
         for (auto neighbour : this->getNeighboursOfPoint(point)) {
             const Pixel *pixel = this->getPixelAtPoint(neighbour);
             if (!pixel->is_filled) {
                 continue;
             }
-            int diff = this->difference_function(&colour, &pixel->colour);
-//            std::cout << "Diff " << diff;
+            float diff = this->difference_function(&colour, &pixel->colour);
             diffs.push_back(diff);
         }
-//        return 5;
         if (diffs.empty()) {
-            return INT32_MAX;
+            return MAXFLOAT;
         }
 
-        return *std::min_element(diffs.begin(), diffs.end());
-//        return (int) (std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
-        // average or minimum selection
-//        if (AVERAGE)
-//            return (int)diffs.Average();
-//        else
-//            return diffs.Min();
+        if(neighbour_average) {
+            return (float) (std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
+        }
+        else {
+            return *std::min_element(diffs.begin(), diffs.end());
+        }
     }
 
 
@@ -302,6 +322,8 @@ public:
         std::cout << "Done" << std::endl;
     }
 
+
+
 private:
 
     int pixels_wide = 256;
@@ -309,6 +331,7 @@ private:
     int colour_depth = 0;
     int num_start_points = INT32_MAX;
     StartType start_type = StartType::START_TYPE_CENTRE;
+    FillMode  fill_mode = FillMode::FILL_MODE_EDGE;
 
     float (*difference_function)(const Colour *const, const Colour *const) = getColourAbsoluteDiff;
 

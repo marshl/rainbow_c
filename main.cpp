@@ -16,11 +16,12 @@ int main(int argc, char *argv[]) {
 
     opterr = 0;
     RainbowRenderer::StartType start_type;
+    RainbowRenderer::FillMode fill_mode;
 
     auto rainbow_renderer = new RainbowRenderer();
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:c:d:s:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:c:d:s:f:")) != -1) {
         switch (c) {
             case 'w': {
                 int pixelsWide = (int) strtol(optarg, nullptr, 0);
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
             }
             case 'd': {
                 std::string diff_type = optarg;
-                float (*difference_func)(const Colour *const , const Colour *const );
+                float (*difference_func)(const Colour *const, const Colour *const);
                 if (diff_type == "lum") {
                     difference_func = getColourLuminosityDiff;
                 } else if (diff_type == "colour" || diff_type == "color") {
@@ -84,17 +85,32 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer->setStartType(start_type);
                 break;
             }
-            case '?':
-                if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd') {
-                    std::cerr << "Option -" << optopt << " requires and argument" << std::endl;
+            case 'f': {
+                std::string fill_mode_str = optarg;
+                if (fill_mode_str == "edge") {
+                    fill_mode = RainbowRenderer::FILL_MODE_EDGE;
+                } else if (fill_mode_str == "neighbour") {
+                    fill_mode = RainbowRenderer::FILL_MODE_NEIGHBOUR;
+                } else if (fill_mode_str == "average") {
+                    fill_mode = RainbowRenderer::FILL_MODE_NEIGHBOUR_AVERAGE;
+                } else {
+                    std::cerr << "Unknown fill mode " << fill_mode_str << std::endl;
+                    return 1;
+                }
+                rainbow_renderer->setFillMode(fill_mode);
+                break;
+            }
+            case '?': {
+                if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd' || optopt == 'f') {
+                    std::cerr << "Option -" << optopt << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
-                    std::cerr << "Unknown option -" << optopt << std::endl;
+                    std::cerr << "Unknown option -" << char(optopt) << std::endl;
                     fprintf(stderr, "Unknown option `-%c'.\n", optopt);
                 } else {
                     std::cerr << "Unknown option character" << optopt << std::endl;
                 }
                 return 1;
-
+            }
             default:
                 abort();
         }
@@ -109,8 +125,7 @@ int main(int argc, char *argv[]) {
 
     time_t start_time = time(nullptr);
     rainbow_renderer->init();
-    rainbow_renderer->edge_fill();
-//    rainbow_renderer->neighbour_fill();
+    rainbow_renderer->fill();
     time_t end_time = time(nullptr);
     std::cout << "Completed in " << (end_time - start_time) << "s" << std::endl;
 
