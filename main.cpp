@@ -21,9 +21,9 @@ int main(int argc, char *argv[]) {
     auto rainbow_renderer = new RainbowRenderer();
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:c:d:s:f:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:c:d:s:f:o:")) != -1) {
         switch (c) {
-            case 'w': {
+            case 'w': { // Width
                 int pixelsWide = (int) strtol(optarg, nullptr, 0);
                 if (pixelsWide <= 0) {
                     std::cout << "Invalid width argument " << optarg << std::endl;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer->setPixelsWide(pixelsWide);
                 break;
             }
-            case 'h': {
+            case 'h': { // Height
                 int pixelsHigh = (int) strtol(optarg, nullptr, 0);
                 if (pixelsHigh <= 0) {
                     std::cout << "Invalid height argument " << optarg << std::endl;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer->setPixelsHigh(pixelsHigh);
                 break;
             }
-            case 'c': {
+            case 'c': { // Colour depth
                 int colour_depth = (int) strtol(optarg, nullptr, 0);
                 if (colour_depth <= 0) {
                     std::cout << "Invalid colour depth argument " << optarg << std::endl;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer->setColourDepth(colour_depth);
                 break;
             }
-            case 'd': {
+            case 'd': { // Colour difference function
                 std::string diff_type = optarg;
                 float (*difference_func)(const Colour *const, const Colour *const);
                 if (diff_type == "lum") {
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer->setDifferenceFunction(difference_func);
                 break;
             }
-            case 's': {
+            case 's': { // Starting positions
                 std::string start_type_str = optarg;
                 if (start_type_str == "center" || start_type_str == "centre") {
                     start_type = RainbowRenderer::START_TYPE_CENTRE;
@@ -85,19 +85,46 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer->setStartType(start_type);
                 break;
             }
-            case 'f': {
+            case 'f': { // Fill mode
                 std::string fill_mode_str = optarg;
-                if (fill_mode_str == "edge") {
+                if (fill_mode_str == "edge") { // Fastest
                     fill_mode = RainbowRenderer::FILL_MODE_EDGE;
-                } else if (fill_mode_str == "neighbour") {
+                } else if (fill_mode_str == "neighbour") { // Slower, smoother
                     fill_mode = RainbowRenderer::FILL_MODE_NEIGHBOUR;
-                } else if (fill_mode_str == "average") {
+                } else if (fill_mode_str == "average") { // Really slow, "coral" effect
                     fill_mode = RainbowRenderer::FILL_MODE_NEIGHBOUR_AVERAGE;
                 } else {
                     std::cerr << "Unknown fill mode " << fill_mode_str << std::endl;
                     return 1;
                 }
                 rainbow_renderer->setFillMode(fill_mode);
+                break;
+            }
+            case 'o': { // Initial colour ordering
+                std::string colour_order_string = optarg;
+                for(char & it : colour_order_string) {
+                    switch(it) {
+                        case 'r':
+                        case 'R':
+                            rainbow_renderer->addColourOrder({COLOUR_ORDER_RANDOM, false});
+                            break;
+                        case 'h':
+                        case 'H':
+                            rainbow_renderer->addColourOrder({COLOUR_ORDER_HUE, it == 'H'});
+                            break;
+                        case 's':
+                        case 'S':
+                            rainbow_renderer->addColourOrder({COLOUR_ORDER_SAT, it == 'S'});
+                            break;
+                        case 'l':
+                        case 'L':
+                            rainbow_renderer->addColourOrder({COLOUR_ORDER_LUM, it == 'L'});
+                            break;
+                        default:
+                            std::cerr << "Unknown colour ordering " << it << std::endl;
+                            exit(1);
+                    }
+                }
                 break;
             }
             case '?': {

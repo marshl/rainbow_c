@@ -76,7 +76,6 @@ float getColourAbsoluteDiff(const Colour *const colour_1, const Colour *const co
 
 float getColourHueDiff(const Colour *const colour_1, const Colour *const colour_2) {
     return std::fabs((colour_1->hue - colour_1->lum) - (colour_2->hue - colour_2->lum));
-//    return std::fabs((colour_1->hue) - (colour_2->hue));
 }
 
 float getColourLuminosityDiff(const Colour *const colour_1, const Colour *const colour_2) {
@@ -85,8 +84,6 @@ float getColourLuminosityDiff(const Colour *const colour_1, const Colour *const 
 
 bool compareHue(const Colour &c1, const Colour &c2) {
     return c1.hue < c2.hue;
-//    return c1.hue - c1.sat < c2.hue - c2.sat;
-//    return c1.hue < c2.hue && c1.lum > c2.lum;
 }
 
 bool compareLum(const Colour &c1, const Colour &c2) {

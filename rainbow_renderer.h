@@ -10,6 +10,19 @@
 #include "pixel.h"
 #include "point.h"
 
+enum OrderingType {
+    COLOUR_ORDER_HUE,
+    COLOUR_ORDER_SAT,
+    COLOUR_ORDER_LUM,
+    COLOUR_ORDER_RANDOM,
+};
+
+struct ColourOrdering {
+
+    OrderingType ordering_type;
+    bool reverse = false;
+};
+
 class RainbowRenderer {
 public:
     std::default_random_engine rng = std::default_random_engine(std::random_device{}());
@@ -54,6 +67,10 @@ public:
 
     void setFillMode(FillMode _fill_mode) {
         this->fill_mode = _fill_mode;
+    }
+
+    void addColourOrder(ColourOrdering ordering) {
+        this->colour_ordering.push_back(ordering);
     }
 
     /// Initialises starting pixels
@@ -332,6 +349,7 @@ private:
     int num_start_points = INT32_MAX;
     StartType start_type = StartType::START_TYPE_CENTRE;
     FillMode  fill_mode = FillMode::FILL_MODE_EDGE;
+    std::vector<ColourOrdering> colour_ordering;
 
     float (*difference_function)(const Colour *const, const Colour *const) = getColourAbsoluteDiff;
 
@@ -383,6 +401,8 @@ private:
             this->colour_depth = ceil(pow(this->pixels_wide * this->pixels_high, 1.0f / 3.0f));
         }
 
+        std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
+                  << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
         for (int r = 0; r < this->colour_depth; ++r) {
             for (int g = 0; g < this->colour_depth; ++g) {
                 for (int b = 0; b < this->colour_depth; ++b) {
@@ -392,14 +412,40 @@ private:
                 }
             }
         }
-//        std::shuffle(std::begin(colours), std::end(colours), rng);
 
-        std::cout << "depth: " << this->colour_depth << " = " << this->colours.size() << " actual "
-                  << (this->pixels_wide * this->pixels_high) << std::endl;
-        std::sort(std::begin(colours), std::end(colours), compareLum);
-        std::sort(std::begin(colours), std::end(colours), compareHue);
-        std::sort(std::begin(colours), std::end(colours), compareSat);
-        std::reverse(std::begin(colours), std::end(colours));
+        // Default colour ordering if the user doesn't supply any
+        if(this->colour_ordering.empty()) {
+            this->colour_ordering.push_back({COLOUR_ORDER_LUM, false});
+            this->colour_ordering.push_back({COLOUR_ORDER_HUE, false});
+            this->colour_ordering.push_back({COLOUR_ORDER_SAT, true});
+        }
+
+        for (auto order : this->colour_ordering) {
+            bool (*compare_func)(const Colour &c1, const Colour &c2);
+            switch(order.ordering_type) {
+                case COLOUR_ORDER_RANDOM:
+                    std::shuffle(std::begin(colours), std::end(colours), rng);
+                    continue;
+                case COLOUR_ORDER_HUE:
+                    compare_func = compareHue;
+                    break;
+                case COLOUR_ORDER_SAT:
+                    compare_func=compareSat;
+                    break;
+                case COLOUR_ORDER_LUM:
+                    compare_func = compareLum;
+                    break;
+                default:
+                    std::cerr << "Unknown colour ordering " << order.ordering_type << std::endl;
+                    return;
+            }
+            if (order.reverse) {
+                std::sort(std::rbegin(colours), std::rend(colours), compare_func);
+            } else {
+                std::sort(std::begin(colours), std::end(colours), compare_func);
+            }
+
+        }
     }
 
 
