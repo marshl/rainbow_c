@@ -82,6 +82,14 @@ float getColourLuminosityDiff(const Colour *const colour_1, const Colour *const 
     return std::fabs(colour_1->lum - colour_2->lum);
 }
 
+float getNaturalColourDiff(const Colour *const colour_1, const Colour *const colour_2) {
+    int rmean = (colour_1->r + colour_2->r) / 2;
+    int r = colour_1->r - colour_2->r;
+    int g = colour_1->g - colour_2->g;
+    int b = colour_1->b - colour_2->b;
+    return float((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
+}
+
 bool compareHue(const Colour &c1, const Colour &c2) {
     return c1.hue < c2.hue;
 }

@@ -401,8 +401,6 @@ private:
             this->colour_depth = ceil(pow(this->pixels_wide * this->pixels_high, 1.0f / 3.0f));
         }
 
-        std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
-                  << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
         for (int r = 0; r < this->colour_depth; ++r) {
             for (int g = 0; g < this->colour_depth; ++g) {
                 for (int b = 0; b < this->colour_depth; ++b) {
@@ -412,6 +410,8 @@ private:
                 }
             }
         }
+        std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
+                << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
 
         // Default colour ordering if the user doesn't supply any
         if(this->colour_ordering.empty()) {

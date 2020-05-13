@@ -57,6 +57,8 @@ int main(int argc, char *argv[]) {
                     difference_func = getColourLuminosityDiff;
                 } else if (diff_type == "colour" || diff_type == "color") {
                     difference_func = getColourAbsoluteDiff;
+                } else if (diff_type == "natural") {
+                    difference_func = getNaturalColourDiff;
                 } else if (diff_type == "hue") {
                     difference_func = getColourHueDiff;
                 } else {
