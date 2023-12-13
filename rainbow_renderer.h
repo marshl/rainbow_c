@@ -57,7 +57,7 @@ public:
         this->colour_depth = _colour_depth;
     }
 
-    void setDifferenceFunction(float (*_func)(const Colour&, const Colour&)) {
+    void setDifferenceFunction(float (*_func)(const Colour &, const Colour &)) {
         this->difference_function = _func;
     }
 
@@ -147,7 +147,7 @@ public:
     }
 
     void fill() {
-        switch(this->fill_mode) {
+        switch (this->fill_mode) {
             case FILL_MODE_EDGE:
                 this->edge_fill();
                 break;
@@ -168,10 +168,10 @@ public:
                 std::cout << "Out of edges or colours" << std::endl;
                 break;
             }
-            const Colour& current_colour = this->colours[this->colour_index];
+            const Colour &current_colour = this->colours[this->colour_index];
             Point best_point;
             float best_difference = MAXFLOAT;
-            for (auto &available_edge : this->available_edges) {
+            for (auto &available_edge: this->available_edges) {
                 float diff = this->difference_function(current_colour, getPixelAtPoint(available_edge)->colour);
                 if (diff < best_difference) {
                     best_point = available_edge;
@@ -215,7 +215,7 @@ public:
         }
     }
 
-    void neighbour_fill(bool neighbour_average=false) {
+    void neighbour_fill(bool neighbour_average = false) {
         const int total_pixels = this->pixels_high * this->pixels_wide;
         const int partition = total_pixels / 100;
         // List of places where pixels can be placed (next to neighbours)
@@ -240,12 +240,13 @@ public:
 
         // While there are colours to place and avaialable spots to place them
         for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
-            Colour& colour = this->colours[colour_index];
+            Colour &colour = this->colours[colour_index];
             Point best_point;
             float best_difference = MAXFLOAT;
             // Find the point that has neighbours that are closest
             for (auto point: availablePoints) {
-                float neighbourDiff = this->getNeighbourDifference(point, colour, neighbour_average=neighbour_average);
+                float neighbourDiff = this->getNeighbourDifference(point, colour,
+                                                                   neighbour_average = neighbour_average);
                 if (neighbourDiff < best_difference) {
                     best_difference = neighbourDiff;
                     best_point = point;
@@ -267,7 +268,8 @@ public:
 
             if (this->colour_index % partition == 0) {
                 std::cout << "Placed " << this->colour_index << "/" << total_pixels << " pixels ( "
-                          << ((float) this->colour_index / float(total_pixels) * 100) << "%) with " << availablePoints.size()
+                          << ((float) this->colour_index / float(total_pixels) * 100) << "%) with "
+                          << availablePoints.size()
                           << " spaces available"
                           << std::endl;
                 std::ostringstream stream;
@@ -280,9 +282,9 @@ public:
         }
     }
 
-    float getNeighbourDifference(Point point, const Colour &colour, bool neighbour_average=false) {
+    float getNeighbourDifference(Point point, const Colour &colour, bool neighbour_average = false) {
         std::vector<float> diffs;
-        for (auto neighbour : this->getNeighboursOfPoint(point)) {
+        for (auto neighbour: this->getNeighboursOfPoint(point)) {
             const Pixel *pixel = this->getPixelAtPoint(neighbour);
             if (!pixel->is_filled) {
                 continue;
@@ -294,10 +296,9 @@ public:
             return MAXFLOAT;
         }
 
-        if(neighbour_average) {
+        if (neighbour_average) {
             return (float) (std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
-        }
-        else {
+        } else {
             return *std::min_element(diffs.begin(), diffs.end());
         }
     }
@@ -323,7 +324,7 @@ public:
             Point edgePoint = *iter;
             auto neighbours = getNeighboursOfPoint(edgePoint);
             bool hasOpenNeighbours = false;
-            for (auto &neighbour_point : neighbours) {
+            for (auto &neighbour_point: neighbours) {
                 const Pixel *neighbour_pixel = getPixelAtPoint(neighbour_point);
                 if (!neighbour_pixel->is_filled) {
                     hasOpenNeighbours = true;
@@ -340,7 +341,6 @@ public:
     }
 
 
-
 private:
 
     int pixels_wide = 256;
@@ -348,10 +348,10 @@ private:
     int colour_depth = 0;
     int num_start_points = INT32_MAX;
     StartType start_type = StartType::START_TYPE_CENTRE;
-    FillMode  fill_mode = FillMode::FILL_MODE_EDGE;
+    FillMode fill_mode = FillMode::FILL_MODE_EDGE;
     std::vector<ColourOrdering> colour_ordering;
 
-    float (*difference_function)(const Colour&, const Colour &) = getColourAbsoluteDiff;
+    float (*difference_function)(const Colour &, const Colour &) = getColourAbsoluteDiff;
 
     std::vector<Colour> colours;
     std::vector<Pixel> pixels;
@@ -411,18 +411,18 @@ private:
             }
         }
         std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
-                << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
+                  << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
 
         // Default colour ordering if the user doesn't supply any
-        if(this->colour_ordering.empty()) {
+        if (this->colour_ordering.empty()) {
             this->colour_ordering.push_back({COLOUR_ORDER_LUM, false});
             this->colour_ordering.push_back({COLOUR_ORDER_HUE, false});
             this->colour_ordering.push_back({COLOUR_ORDER_SAT, true});
         }
 
-        for (auto order : this->colour_ordering) {
+        for (auto order: this->colour_ordering) {
             bool (*compare_func)(const Colour &c1, const Colour &c2);
-            switch(order.ordering_type) {
+            switch (order.ordering_type) {
                 case COLOUR_ORDER_RANDOM:
                     std::shuffle(std::begin(colours), std::end(colours), rng);
                     continue;
@@ -430,7 +430,7 @@ private:
                     compare_func = compareHue;
                     break;
                 case COLOUR_ORDER_SAT:
-                    compare_func=compareSat;
+                    compare_func = compareSat;
                     break;
                 case COLOUR_ORDER_LUM:
                     compare_func = compareLum;

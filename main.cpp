@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
             }
             case 'd': { // Colour difference function
                 std::string diff_type = optarg;
-                float (*difference_func)(const Colour&, const Colour&);
+                float (*difference_func)(const Colour &, const Colour &);
                 if (diff_type == "lum") {
                     difference_func = getColourLuminosityDiff;
                 } else if (diff_type == "colour" || diff_type == "color") {
@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
             }
             case 'o': { // Initial colour ordering
                 std::string colour_order_string = optarg;
-                for(char & it : colour_order_string) {
-                    switch(it) {
+                for (char &it: colour_order_string) {
+                    switch (it) {
                         case 'r':
                         case 'R':
                             rainbow_renderer->addColourOrder({COLOUR_ORDER_RANDOM, false});

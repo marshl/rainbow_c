@@ -22,7 +22,7 @@ struct Point {
         return other.x == this->x && other.y == this->y;
     }
 
-    bool operator < (const Point& other) const {
+    bool operator<(const Point &other) const {
         return other.x < this->x || other.y < this->y;
     }
 };

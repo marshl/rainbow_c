@@ -48,7 +48,10 @@ struct Colour {
     float sat;
     float lum;
 
-    Colour() { this->r = this->g = this->b = 0; this->hue = this->sat = this->lum = 0; }
+    Colour() {
+        this->r = this->g = this->b = 0;
+        this->hue = this->sat = this->lum = 0;
+    }
 
     Colour(uint8_t _r, uint8_t _g, uint8_t _b) {
         this->r = _r;
@@ -67,22 +70,22 @@ std::ostream &operator<<(std::ostream &os, const Colour &colour) {
     return os << (int) colour.r << "," << (int) colour.g << "," << (int) colour.b;
 }
 
-float getColourAbsoluteDiff(const Colour& colour_1, const Colour& colour_2) {
+float getColourAbsoluteDiff(const Colour &colour_1, const Colour &colour_2) {
     int r = colour_1.r - colour_2.r;
     int g = colour_1.g - colour_2.g;
     int b = colour_1.b - colour_2.b;
     return float(r * r + g * g + b * b);
 }
 
-float getColourHueDiff(const Colour& colour_1, const Colour& colour_2) {
+float getColourHueDiff(const Colour &colour_1, const Colour &colour_2) {
     return std::fabs((colour_1.hue - colour_1.lum) - (colour_2.hue - colour_2.lum));
 }
 
-float getColourLuminosityDiff(const Colour& colour_1, const Colour & colour_2) {
+float getColourLuminosityDiff(const Colour &colour_1, const Colour &colour_2) {
     return std::fabs(colour_1.lum - colour_2.lum);
 }
 
-float getNaturalColourDiff(const Colour& colour_1, const Colour& colour_2) {
+float getNaturalColourDiff(const Colour &colour_1, const Colour &colour_2) {
     int rmean = (colour_1.r + colour_2.r) / 2;
     int r = colour_1.r - colour_2.r;
     int g = colour_1.g - colour_2.g;
