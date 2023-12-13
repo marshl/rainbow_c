@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
             }
             case 'd': { // Colour difference function
                 std::string diff_type = optarg;
-                float (*difference_func)(const Colour *const, const Colour *const);
+                float (*difference_func)(const Colour&, const Colour&);
                 if (diff_type == "lum") {
                     difference_func = getColourLuminosityDiff;
                 } else if (diff_type == "colour" || diff_type == "color") {

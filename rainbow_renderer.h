@@ -57,7 +57,7 @@ public:
         this->colour_depth = _colour_depth;
     }
 
-    void setDifferenceFunction(float (*_func)(const Colour *const, const Colour *const)) {
+    void setDifferenceFunction(float (*_func)(const Colour&, const Colour&)) {
         this->difference_function = _func;
     }
 
@@ -168,11 +168,11 @@ public:
                 std::cout << "Out of edges or colours" << std::endl;
                 break;
             }
-            Colour *current_colour = &this->colours[this->colour_index];
+            const Colour& current_colour = this->colours[this->colour_index];
             Point best_point;
             float best_difference = MAXFLOAT;
             for (auto &available_edge : this->available_edges) {
-                float diff = this->difference_function(current_colour, &getPixelAtPoint(available_edge)->colour);
+                float diff = this->difference_function(current_colour, getPixelAtPoint(available_edge)->colour);
                 if (diff < best_difference) {
                     best_point = available_edge;
                     best_difference = diff;
@@ -189,7 +189,7 @@ public:
                 if (neighbour_pixel->is_filled) {
                     continue;
                 }
-                neighbour_pixel->colour = *current_colour;
+                neighbour_pixel->colour = current_colour;
                 neighbour_pixel->is_filled = true;
                 this->available_edges.push_back(neighbour);
                 ++this->colour_index;
@@ -287,7 +287,7 @@ public:
             if (!pixel->is_filled) {
                 continue;
             }
-            float diff = this->difference_function(&colour, &pixel->colour);
+            float diff = this->difference_function(colour, pixel->colour);
             diffs.push_back(diff);
         }
         if (diffs.empty()) {
@@ -351,7 +351,7 @@ private:
     FillMode  fill_mode = FillMode::FILL_MODE_EDGE;
     std::vector<ColourOrdering> colour_ordering;
 
-    float (*difference_function)(const Colour *const, const Colour *const) = getColourAbsoluteDiff;
+    float (*difference_function)(const Colour&, const Colour &) = getColourAbsoluteDiff;
 
     std::vector<Colour> colours;
     std::vector<Pixel> pixels;

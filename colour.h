@@ -41,14 +41,14 @@ std::tuple<float, float, float> rgbToHsl(int pR, int pG, int pB) {
 
 /// An RGB colour value
 struct Colour {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+    int r;
+    int g;
+    int b;
     float hue;
     float sat;
     float lum;
 
-    Colour() { this->r = this->g = this->b = this->hue = this->sat = this->lum = 0; }
+    Colour() { this->r = this->g = this->b = 0; this->hue = this->sat = this->lum = 0; }
 
     Colour(uint8_t _r, uint8_t _g, uint8_t _b) {
         this->r = _r;
@@ -67,26 +67,26 @@ std::ostream &operator<<(std::ostream &os, const Colour &colour) {
     return os << (int) colour.r << "," << (int) colour.g << "," << (int) colour.b;
 }
 
-float getColourAbsoluteDiff(const Colour *const colour_1, const Colour *const colour_2) {
-    int r = (int) colour_1->r - (int) colour_2->r;
-    int g = (int) colour_1->g - (int) colour_2->g;
-    int b = (int) colour_1->b - (int) colour_2->b;
+float getColourAbsoluteDiff(const Colour& colour_1, const Colour& colour_2) {
+    int r = colour_1.r - colour_2.r;
+    int g = colour_1.g - colour_2.g;
+    int b = colour_1.b - colour_2.b;
     return float(r * r + g * g + b * b);
 }
 
-float getColourHueDiff(const Colour *const colour_1, const Colour *const colour_2) {
-    return std::fabs((colour_1->hue - colour_1->lum) - (colour_2->hue - colour_2->lum));
+float getColourHueDiff(const Colour& colour_1, const Colour& colour_2) {
+    return std::fabs((colour_1.hue - colour_1.lum) - (colour_2.hue - colour_2.lum));
 }
 
-float getColourLuminosityDiff(const Colour *const colour_1, const Colour *const colour_2) {
-    return std::fabs(colour_1->lum - colour_2->lum);
+float getColourLuminosityDiff(const Colour& colour_1, const Colour & colour_2) {
+    return std::fabs(colour_1.lum - colour_2.lum);
 }
 
-float getNaturalColourDiff(const Colour *const colour_1, const Colour *const colour_2) {
-    int rmean = (colour_1->r + colour_2->r) / 2;
-    int r = colour_1->r - colour_2->r;
-    int g = colour_1->g - colour_2->g;
-    int b = colour_1->b - colour_2->b;
+float getNaturalColourDiff(const Colour& colour_1, const Colour& colour_2) {
+    int rmean = (colour_1.r + colour_2.r) / 2;
+    int r = colour_1.r - colour_2.r;
+    int g = colour_1.g - colour_2.g;
+    int b = colour_1.b - colour_2.b;
     return float((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
 }
 
