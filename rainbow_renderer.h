@@ -25,7 +25,6 @@ struct ColourOrdering {
 
 class RainbowRenderer {
 public:
-    std::default_random_engine rng = std::default_random_engine(std::random_device{}());
 
     enum StartType {
         START_TYPE_CENTRE,
@@ -40,6 +39,10 @@ public:
         FILL_MODE_EDGE,
         FILL_MODE_NEIGHBOUR_AVERAGE,
     };
+
+    void setSeed(unsigned int _seed) {
+        this->seed = _seed;
+    }
 
     void setPixelsWide(int _pixels_wide) {
         this->pixels_wide = _pixels_wide;
@@ -75,6 +78,7 @@ public:
 
     /// Initialises starting pixels
     void init() {
+        this->rng = std::default_random_engine(this->seed);
         this->pixels.resize(this->pixels_wide * this->pixels_high);
         this->fillColours();
         std::vector<Point> possible_start_points;
@@ -342,6 +346,8 @@ public:
 
 
 private:
+    std::default_random_engine rng;
+    unsigned int seed = std::random_device{}();
 
     int pixels_wide = 256;
     int pixels_high = 256;

@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer->setDifferenceFunction(difference_func);
                 break;
             }
-            case 's': { // Starting positions
+            case 'p': { // Starting positions
                 std::string start_type_str = optarg;
                 if (start_type_str == "center" || start_type_str == "centre") {
                     start_type = RainbowRenderer::START_TYPE_CENTRE;
@@ -129,8 +129,17 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             }
+            case 's': {
+                int seed = (int) strtol(optarg, nullptr, 0);
+                if (seed <= 0) {
+                    std::cout << "Invalid seed argument " << optarg << std::endl;
+                    return 1;
+                }
+                rainbow_renderer->setSeed(seed);
+                break;
+            }
             case '?': {
-                if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd' || optopt == 'f') {
+                if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd' || optopt == 'f' || optopt == 'p') {
                     std::cerr << "Option -" << optopt << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
                     std::cerr << "Unknown option -" << char(optopt) << std::endl;
