@@ -174,7 +174,7 @@ public:
             }
             const Colour &current_colour = this->colours[this->colour_index];
             Point best_point;
-            float best_difference = MAXFLOAT;
+            float best_difference = std::numeric_limits<float>::max();
             for (auto &available_edge: this->available_edges) {
                 float diff = this->difference_function(current_colour, getPixelAtPoint(available_edge)->colour);
                 if (diff < best_difference) {
@@ -246,7 +246,7 @@ public:
         for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
             Colour &colour = this->colours[colour_index];
             Point best_point;
-            float best_difference = MAXFLOAT;
+            float best_difference = std::numeric_limits<float>::max();
             // Find the point that has neighbours that are closest
             for (auto point: availablePoints) {
                 float neighbourDiff = this->getNeighbourDifference(point, colour,
@@ -297,7 +297,7 @@ public:
             diffs.push_back(diff);
         }
         if (diffs.empty()) {
-            return MAXFLOAT;
+            return std::numeric_limits<float>::max();
         }
 
         if (neighbour_average) {
