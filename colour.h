@@ -92,6 +92,10 @@ struct Colour {
         this->lum = std::get<2>(t);
     }
 
+    bool operator < (const Colour& c) const
+    {
+        return this->r < c.r || this->g< c.g || this->b < c.b;
+    }
 
 };
 

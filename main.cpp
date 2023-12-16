@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     auto rainbow_renderer = new RainbowRenderer();
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:c:d:s:f:o:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S")) != -1) {
         switch (c) {
             case 'w': { // Width
                 int pixelsWide = (int) strtol(optarg, nullptr, 0);
@@ -39,6 +39,51 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 rainbow_renderer->setPixelsHigh(pixelsHigh);
+                break;
+            }
+            case 'H': { // Starting hues
+                int hue = (int) strtol(optarg, nullptr, 0);
+                if (hue < 0 || hue > 360) {
+                    std::cout << "Starting hue must be between 0 and 360 " << std::endl;
+                    return 1;
+                }
+                rainbow_renderer->addStartingHue(hue);
+                break;
+            }
+            case 'l': { // Minimum luminosity
+                float minLuminosity = std::stof(optarg);
+                if (minLuminosity < 0 || minLuminosity > 1.0) {
+                    std::cerr << "Minimum luminosity must be between 0 and 1 " << std::endl;
+                    return 1;
+                }
+                rainbow_renderer->setMinimumLuminosity(minLuminosity);
+                break;
+            }
+            case 'L': { // Maximum luminosity
+                float maxLuminosity = strtof(optarg, nullptr);
+                if (maxLuminosity < 0 || maxLuminosity > 1.0) {
+                    std::cerr << "Minimum luminosity must be between 0 and 1" << std::endl;
+                    return 1;
+                }
+                rainbow_renderer->setMaximumLuminosity(maxLuminosity);
+                break;
+            }
+            case 's': { // Minimum saturation
+                float minSaturation = std::stof(optarg);
+                if (minSaturation < 0 || minSaturation > 1.0) {
+                    std::cerr << "Minimum saturation must be between 0 and 1 " << std::endl;
+                    return 1;
+                }
+                rainbow_renderer->setMinimumSaturation(minSaturation);
+                break;
+            }
+            case 'S': { // Maximum saturation
+                float maxSaturation = strtof(optarg, nullptr);
+                if (maxSaturation < 0 || maxSaturation > 1.0) {
+                    std::cerr << "Maximum saturation must be between 0 and 1" << std::endl;
+                    return 1;
+                }
+                rainbow_renderer->setMaximumSaturation(maxSaturation);
                 break;
             }
             case 'c': { // Colour depth
@@ -129,7 +174,7 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             }
-            case 's': {
+            case 'r': {
                 int seed = (int) strtol(optarg, nullptr, 0);
                 if (seed <= 0) {
                     std::cout << "Invalid seed argument " << optarg << std::endl;
@@ -139,7 +184,8 @@ int main(int argc, char *argv[]) {
                 break;
             }
             case '?': {
-                if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd' || optopt == 'f' || optopt == 'p') {
+                if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd' || optopt == 'f' ||
+                    optopt == 'p') {
                     std::cerr << "Option -" << optopt << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
                     std::cerr << "Unknown option -" << char(optopt) << std::endl;

@@ -1,6 +1,7 @@
 #ifndef RAINBOW_C_RAINBOW_RENDERER_H
 #define RAINBOW_C_RAINBOW_RENDERER_H
 
+#include <set>
 #include <vector>
 #include <list>
 #include <sstream>
@@ -74,6 +75,26 @@ public:
 
     void addColourOrder(ColourOrdering ordering) {
         this->colour_ordering.push_back(ordering);
+    }
+
+    void addStartingHue(int hue) {
+        this->startingHues.push_back(hue);
+    }
+
+    void setMinimumLuminosity(float luminosity) {
+        this->minimumLuminosity = luminosity;
+    }
+
+    void setMaximumLuminosity(float luminosity) {
+        this->maximumLuminosity = luminosity;
+    }
+
+    void setMinimumSaturation(float saturation) {
+        this->minimumSaturation = saturation;
+    }
+
+    void setMaximumSaturation(float saturation) {
+        this->maximumSaturation = saturation;
     }
 
     /// Initialises starting pixels
@@ -323,6 +344,7 @@ public:
 
     void cleanFilledEdges() {
         std::cout << "Cleaning " << std::flush;
+        int removedEdges = 0;
         auto iter = this->available_edges.begin();
         while (iter != this->available_edges.end()) {
             Point edgePoint = *iter;
@@ -337,11 +359,12 @@ public:
             }
             if (!hasOpenNeighbours) {
                 iter = this->available_edges.erase(iter);
+                removedEdges += 1;
             } else {
                 ++iter;
             }
         }
-        std::cout << "Done" << std::endl;
+        std::cout << "Done (cleaned " << removedEdges << " edges" << std::endl;
     }
 
 
@@ -356,6 +379,13 @@ private:
     StartType start_type = StartType::START_TYPE_CENTRE;
     FillMode fill_mode = FillMode::FILL_MODE_EDGE;
     std::vector<ColourOrdering> colour_ordering;
+    std::vector<int> startingHues;
+
+    float minimumLuminosity = 0.0f;
+    float maximumLuminosity = 1.0f;
+
+    float minimumSaturation = 0.0f;
+    float maximumSaturation = 1.0f;
 
     float (*difference_function)(const Colour &, const Colour &) = getColourAbsoluteDiff;
 
@@ -403,18 +433,59 @@ private:
     /// Fills the list of random colours
     /// \param colour_depth The number of each unique colours in each channel
     void fillColours() {
-        if (this->colour_depth == 0) {
-            this->colour_depth = ceil(pow(this->pixels_wide * this->pixels_high, 1.0f / 3.0f));
-        }
+        if (this->startingHues.empty()) {
+            if (this->colour_depth == 0) {
+                this->colour_depth = ceil(pow(this->pixels_wide * this->pixels_high, 1.0f / 3.0f));
+            }
 
-        for (int r = 0; r < this->colour_depth; ++r) {
-            for (int g = 0; g < this->colour_depth; ++g) {
-                for (int b = 0; b < this->colour_depth; ++b) {
-                    this->colours.emplace_back(Colour(r * 255 / (this->colour_depth - 1),
-                                                      g * 255 / (this->colour_depth - 1),
-                                                      b * 255 / (this->colour_depth - 1)));
+            for (int r = 0; r < this->colour_depth; ++r) {
+                for (int g = 0; g < this->colour_depth; ++g) {
+                    for (int b = 0; b < this->colour_depth; ++b) {
+                        this->colours.emplace_back(Colour(r * 255 / (this->colour_depth - 1),
+                                                          g * 255 / (this->colour_depth - 1),
+                                                          b * 255 / (this->colour_depth - 1)));
+                    }
                 }
             }
+        } else {
+            int offset = 0;
+            std::set<Colour> colourSet;
+            while (colourSet.size() < this->pixels_wide * this->pixels_high) {
+                for (int r = 0; r < 255; ++r) {
+                    for (int g = 0; g < 255; ++g) {
+                        for (int b = 0; b < 255; ++b) {
+                            auto [hue, sat, lum] = rgbToHsl(r, g, b);
+                            int intHue = int(360 * hue);
+                            for (auto targetHue: this->startingHues) {
+                                // The hue might be close to the target when wrapping around from 360
+                                // so try both and the minimum
+                                int hueDifference = std::abs(intHue - targetHue);
+                                if (hueDifference >= 180) {
+                                    hueDifference =
+                                            targetHue > intHue ? std::abs(intHue + 360 - targetHue) : std::abs(
+                                                    intHue + targetHue - 360);
+                                }
+                                if (std::abs(hueDifference - offset) <= 1 &&
+                                    lum >= this->minimumLuminosity && lum <= this->maximumLuminosity &&
+                                    sat >= this->minimumSaturation && sat <= this->maximumSaturation) {
+                                    if (colourSet.find(Colour(r, g, b)) == colourSet.end()) {
+                                        colourSet.insert(Colour(r, g, b));
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                offset += 1;
+            }
+            this->colours.insert(this->colours.end(), colourSet.begin(), colourSet.end());
+        }
+
+        if (this->colours.size() < this->pixels_wide * this->pixels_high) {
+            std::cout << "Only  " << 100 * this->colours.size() / (this->pixels_wide * this->pixels_high)
+                      << "% covered." << std::endl;
+            exit(1);
         }
         std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
                   << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
