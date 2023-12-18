@@ -49,25 +49,6 @@ float hueToRgb(float p, float q, float t) {
 }
 
 
-std::tuple<int, int, int> HslToRgba(float hue, float sat, float lum) {
-    float r, g, b;
-
-    if (sat == 0.0f) {
-        r = g = b = lum;
-    } else {
-        float q = lum < 0.5f ? lum * (1.0f + sat) : lum + sat - lum * sat;
-        float p = 2.0f * lum - q;
-        r = hueToRgb(p, q, hue + 1.0f / 3.0f);
-        g = hueToRgb(p, q, hue);
-        b = hueToRgb(p, q, hue - 1.0f / 3.0f);
-    }
-
-    return {(int) (r * 255), (int) (g * 255), (int) (b * 255)};
-}
-
-
-
-
 /// An RGB colour value
 struct Colour {
     int r;
@@ -92,9 +73,8 @@ struct Colour {
         this->lum = std::get<2>(t);
     }
 
-    bool operator < (const Colour& c) const
-    {
-        return this->r < c.r || this->g< c.g || this->b < c.b;
+    bool operator<(const Colour &c) const {
+        return this->r < c.r || this->g < c.g || this->b < c.b;
     }
 
 };

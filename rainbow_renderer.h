@@ -106,14 +106,14 @@ public:
 
         switch (this->start_type) {
             case START_TYPE_CENTRE: {
-                possible_start_points.emplace_back(Point(this->pixels_wide / 2, this->pixels_high / 2));
+                possible_start_points.emplace_back(this->pixels_wide / 2, this->pixels_high / 2);
                 break;
             }
             case START_TYPE_CORNER: {
-                possible_start_points.emplace_back(Point(0, 0));
-                possible_start_points.emplace_back(Point(this->pixels_wide - 1, 0));
-                possible_start_points.emplace_back(Point(0, this->pixels_high - 1));
-                possible_start_points.emplace_back(Point(this->pixels_wide - 1, this->pixels_high - 1));
+                possible_start_points.emplace_back(0, 0);
+                possible_start_points.emplace_back(this->pixels_wide - 1, 0);
+                possible_start_points.emplace_back(0, this->pixels_high - 1);
+                possible_start_points.emplace_back(this->pixels_wide - 1, this->pixels_high - 1);
                 break;
             }
             case START_TYPE_EDGE:
@@ -122,7 +122,7 @@ public:
                     for (int x = 0; x < this->pixels_wide; ++x) {
                         if (this->start_type == START_TYPE_RANDOM ||
                             (x == 0 || x == this->pixels_wide - 1 || y == 0 || y == this->pixels_high - 1)) {
-                            possible_start_points.emplace_back(Point(x, y));
+                            possible_start_points.emplace_back(x, y);
                         }
                     }
                 }
@@ -138,10 +138,10 @@ public:
                 int mid_x = this->pixels_wide / 2;
                 int mid_y = this->pixels_high / 2;
 
-                possible_start_points.emplace_back(Point(mid_x, mid_y + radius));
-                possible_start_points.emplace_back(Point(mid_x, mid_y - radius));
-                possible_start_points.emplace_back(Point(mid_x + radius, mid_y));
-                possible_start_points.emplace_back(Point(mid_x - radius, mid_y));
+                possible_start_points.emplace_back(mid_x, mid_y + radius);
+                possible_start_points.emplace_back(mid_x, mid_y - radius);
+                possible_start_points.emplace_back(mid_x + radius, mid_y);
+                possible_start_points.emplace_back(mid_x - radius, mid_y);
 
                 while (x_offset < y_offset) {
                     if (f >= 0) {
@@ -152,14 +152,14 @@ public:
                     x_offset++;
                     ddF_x += 2;
                     f += ddF_x + 1;
-                    possible_start_points.emplace_back(Point(mid_x + x_offset, mid_y + y_offset));
-                    possible_start_points.emplace_back(Point(mid_x - x_offset, mid_y + y_offset));
-                    possible_start_points.emplace_back(Point(mid_x + x_offset, mid_y - y_offset));
-                    possible_start_points.emplace_back(Point(mid_x - x_offset, mid_y - y_offset));
-                    possible_start_points.emplace_back(Point(mid_x + y_offset, mid_y + x_offset));
-                    possible_start_points.emplace_back(Point(mid_x - y_offset, mid_y + x_offset));
-                    possible_start_points.emplace_back(Point(mid_x + y_offset, mid_y - x_offset));
-                    possible_start_points.emplace_back(Point(mid_x - y_offset, mid_y - x_offset));
+                    possible_start_points.emplace_back(mid_x + x_offset, mid_y + y_offset);
+                    possible_start_points.emplace_back(mid_x - x_offset, mid_y + y_offset);
+                    possible_start_points.emplace_back(mid_x + x_offset, mid_y - y_offset);
+                    possible_start_points.emplace_back(mid_x - x_offset, mid_y - y_offset);
+                    possible_start_points.emplace_back(mid_x + y_offset, mid_y + x_offset);
+                    possible_start_points.emplace_back(mid_x - y_offset, mid_y + x_offset);
+                    possible_start_points.emplace_back(mid_x + y_offset, mid_y - x_offset);
+                    possible_start_points.emplace_back(mid_x - y_offset, mid_y - x_offset);
                 }
                 break;
             }
@@ -205,7 +205,7 @@ public:
             }
 
             auto neighbours = getNeighboursOfPoint(best_point);
-            int neighbour_count = neighbours.size();
+            int neighbour_count = (int) neighbours.size();
             std::shuffle(std::begin(neighbours), std::end(neighbours), this->rng);
             int neighbour_index = 0;
             for (; neighbour_index < neighbour_count; ++neighbour_index) {
@@ -263,7 +263,7 @@ public:
             }
         }
 
-        // While there are colours to place and avaialable spots to place them
+        // While there are colours to place and available spots to place them
         for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
             Colour &colour = this->colours[colour_index];
             Point best_point;
@@ -322,10 +322,9 @@ public:
         }
 
         if (neighbour_average) {
-            return (float) (std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
-        } else {
-            return *std::min_element(diffs.begin(), diffs.end());
+            return (float) (std::accumulate(diffs.begin(), diffs.end(), 0.0) / float(diffs.size()));
         }
+        return *std::min_element(diffs.begin(), diffs.end());
     }
 
 
@@ -375,7 +374,7 @@ private:
     int pixels_wide = 256;
     int pixels_high = 256;
     int colour_depth = 0;
-    int num_start_points = INT32_MAX;
+    int num_start_points = std::numeric_limits<int>::max();
     StartType start_type = StartType::START_TYPE_CENTRE;
     FillMode fill_mode = FillMode::FILL_MODE_EDGE;
     std::vector<ColourOrdering> colour_ordering;
@@ -424,7 +423,7 @@ private:
                     continue;
                 }
 
-                neighbours.emplace_back(Point(x + point.x, y + point.y));
+                neighbours.emplace_back(x + point.x, y + point.y);
             }
         }
         return neighbours;
@@ -441,9 +440,9 @@ private:
             for (int r = 0; r < this->colour_depth; ++r) {
                 for (int g = 0; g < this->colour_depth; ++g) {
                     for (int b = 0; b < this->colour_depth; ++b) {
-                        this->colours.emplace_back(Colour(r * 255 / (this->colour_depth - 1),
-                                                          g * 255 / (this->colour_depth - 1),
-                                                          b * 255 / (this->colour_depth - 1)));
+                        this->colours.emplace_back(r * 255 / (this->colour_depth - 1),
+                                                   g * 255 / (this->colour_depth - 1),
+                                                   b * 255 / (this->colour_depth - 1));
                     }
                 }
             }
@@ -454,16 +453,19 @@ private:
                 for (int r = 0; r < 255; ++r) {
                     for (int g = 0; g < 255; ++g) {
                         for (int b = 0; b < 255; ++b) {
-                            auto [hue, sat, lum] = rgbToHsl(r, g, b);
-                            int intHue = int(360 * hue);
+                            const auto t = rgbToHsl(r, g, b);
+                            int hue = int(std::get<0>(t) * 360);
+                            float sat = std::get<1>(t);
+                            float lum = std::get<2>(t);
+
                             for (auto targetHue: this->startingHues) {
                                 // The hue might be close to the target when wrapping around from 360
                                 // so try both and the minimum
-                                int hueDifference = std::abs(intHue - targetHue);
+                                int hueDifference = std::abs(hue - targetHue);
                                 if (hueDifference >= 180) {
                                     hueDifference =
-                                            targetHue > intHue ? std::abs(intHue + 360 - targetHue) : std::abs(
-                                                    intHue + targetHue - 360);
+                                            targetHue > hue ? std::abs(hue + 360 - targetHue) : std::abs(
+                                                    hue + targetHue - 360);
                                 }
                                 if (std::abs(hueDifference - offset) <= 1 &&
                                     lum >= this->minimumLuminosity && lum <= this->maximumLuminosity &&
