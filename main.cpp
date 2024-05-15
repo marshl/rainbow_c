@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Invalid width argument " << optarg << std::endl;
                     return 1;
                 }
+                std::cout << "Setting renderer width to " << pixelsWide << std::endl;
                 rainbow_renderer->setPixelsWide(pixelsWide);
                 break;
             }
@@ -38,6 +39,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Invalid height argument " << optarg << std::endl;
                     return 1;
                 }
+                std::cout << "Setting renderer height to " << pixelsHigh << std::endl;
                 rainbow_renderer->setPixelsHigh(pixelsHigh);
                 break;
             }
@@ -47,6 +49,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Starting hue must be between 0 and 360 " << std::endl;
                     return 1;
                 }
+                std::cout << "Adding a starting hue of " << hue << std::endl;
                 rainbow_renderer->addStartingHue(hue);
                 break;
             }
@@ -56,6 +59,7 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Minimum luminosity must be between 0 and 1 " << std::endl;
                     return 1;
                 }
+                std::cout << "Setting the minimum luminosity to " << minLuminosity << std::endl;
                 rainbow_renderer->setMinimumLuminosity(minLuminosity);
                 break;
             }
@@ -65,6 +69,7 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Minimum luminosity must be between 0 and 1" << std::endl;
                     return 1;
                 }
+                std::cout << "Setting the maximum luminosity to " << maxLuminosity << std::endl;
                 rainbow_renderer->setMaximumLuminosity(maxLuminosity);
                 break;
             }
@@ -74,6 +79,7 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Minimum saturation must be between 0 and 1 " << std::endl;
                     return 1;
                 }
+                std::cout << "Setting the minimum saturation to " << minSaturation << std::endl;
                 rainbow_renderer->setMinimumSaturation(minSaturation);
                 break;
             }
@@ -83,16 +89,18 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Maximum saturation must be between 0 and 1" << std::endl;
                     return 1;
                 }
+                std::cout << "Setting the maximum saturation to " << maxSaturation << std::endl;
                 rainbow_renderer->setMaximumSaturation(maxSaturation);
                 break;
             }
             case 'c': { // Colour depth
-                int colour_depth = (int) strtol(optarg, nullptr, 0);
-                if (colour_depth <= 0) {
+                int colourDepth = (int) strtol(optarg, nullptr, 0);
+                if (colourDepth <= 0) {
                     std::cout << "Invalid colour depth argument " << optarg << std::endl;
                     return 1;
                 }
-                rainbow_renderer->setColourDepth(colour_depth);
+                std::cout << "Setting the colour depth to " << colourDepth << std::endl;
+                rainbow_renderer->setColourDepth(colourDepth);
                 break;
             }
             case 'd': { // Colour difference function
@@ -116,8 +124,10 @@ int main(int argc, char *argv[]) {
             case 'p': { // Starting positions
                 std::string start_type_str = optarg;
                 if (start_type_str == "center" || start_type_str == "centre") {
+                    std::cout << "Setting start position to centre" << std::endl;
                     start_type = RainbowRenderer::START_TYPE_CENTRE;
                 } else if (start_type_str == "corner") {
+                    std::cout << "Setting start position too corner(s)" << std::endl;
                     start_type = RainbowRenderer::START_TYPE_CORNER;
                 } else if (start_type_str == "edge") {
                     start_type = RainbowRenderer::START_TYPE_EDGE;
@@ -135,10 +145,13 @@ int main(int argc, char *argv[]) {
             case 'f': { // Fill mode
                 std::string fill_mode_str = optarg;
                 if (fill_mode_str == "edge") { // Fastest
+                    std::cout << "Setting fill mode to \"edge\"" << std::endl;
                     fill_mode = RainbowRenderer::FILL_MODE_EDGE;
-                } else if (fill_mode_str == "neighbour") { // Slower, smoother
+                } else if (fill_mode_str == "neighbour" || fill_mode_str == "neighbor") { // Slower, smoother
+                    std::cout << "Setting fill mode to \"closest neighbour\"" << std::endl;
                     fill_mode = RainbowRenderer::FILL_MODE_NEIGHBOUR;
                 } else if (fill_mode_str == "average") { // Really slow, "coral" effect
+                    std::cout << "Setting fill mode to \"average neighbour\"" << std::endl;
                     fill_mode = RainbowRenderer::FILL_MODE_NEIGHBOUR_AVERAGE;
                 } else {
                     std::cerr << "Unknown fill mode " << fill_mode_str << std::endl;
@@ -154,18 +167,25 @@ int main(int argc, char *argv[]) {
                         case 'r':
                         case 'R':
                             rainbow_renderer->addColourOrder({COLOUR_ORDER_RANDOM, false});
+                            std::cout << "Randomising colours" << std::endl;
                             break;
                         case 'h':
                         case 'H':
                             rainbow_renderer->addColourOrder({COLOUR_ORDER_HUE, it == 'H'});
+                            std::cout << "Sorting colours by hue " << (it == 'h' ? "ascending" : "descending")
+                                      << std::endl;
                             break;
                         case 's':
                         case 'S':
                             rainbow_renderer->addColourOrder({COLOUR_ORDER_SAT, it == 'S'});
+                            std::cout << "Sorting colours by saturation " << (it == 's' ? "ascending" : "descending")
+                                      << std::endl;
                             break;
                         case 'l':
                         case 'L':
                             rainbow_renderer->addColourOrder({COLOUR_ORDER_LUM, it == 'L'});
+                            std::cout << "Sorting colours by luminosity " << (it == 'l' ? "ascending" : "descending")
+                                      << std::endl;
                             break;
                         default:
                             std::cerr << "Unknown colour ordering " << it << std::endl;

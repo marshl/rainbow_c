@@ -25,10 +25,12 @@ struct Point {
     bool operator<(const Point &other) const {
         return other.x < this->x || other.y < this->y;
     }
+
+    friend std::ostream &operator<<(std::ostream &os, const Point &p) {
+        os << "(" << p.x << ", " << p.y << ")";
+        return os;
+    }
 };
 
-std::ostream &operator<<(std::ostream &os, const Point &point) {
-    return os << point.x << "," << point.y;
-}
 
 #endif //RAINBOW_C_POINT_H

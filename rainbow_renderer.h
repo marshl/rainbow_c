@@ -167,6 +167,7 @@ public:
 
         std::shuffle(possible_start_points.begin(), possible_start_points.end(), this->rng);
         for (int i = 0; i < possible_start_points.size() && i < this->num_start_points; ++i) {
+            std::cout << "Starting in position " << possible_start_points[i] << std::endl;
             fillPoint(possible_start_points[i]);
         }
     }
@@ -446,7 +447,11 @@ private:
                     }
                 }
             }
+            std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
+                      << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
         } else {
+            std::cout << "Starting hues detected, ignoring colour depth and instead start from hue points."
+                      << std::endl;
             int offset = 0;
             std::set<Colour> colourSet;
             while (colourSet.size() < this->pixels_wide * this->pixels_high) {
@@ -480,17 +485,17 @@ private:
                     }
                 }
                 offset += 1;
+                std::cout << "Colour offset now " << offset << std::endl;
             }
             this->colours.insert(this->colours.end(), colourSet.begin(), colourSet.end());
         }
 
         if (this->colours.size() < this->pixels_wide * this->pixels_high) {
-            std::cout << "Only  " << 100 * this->colours.size() / (this->pixels_wide * this->pixels_high)
-                      << "% covered." << std::endl;
+            std::cout << "All colours were exhausted with only  "
+                      << 100 * this->colours.size() / (this->pixels_wide * this->pixels_high)
+                      << "% of the image covered. Please revise input parameters" << std::endl;
             exit(1);
         }
-        std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
-                  << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
 
         // Default colour ordering if the user doesn't supply any
         if (this->colour_ordering.empty()) {
