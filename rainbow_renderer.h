@@ -166,6 +166,11 @@ public:
         }
 
         std::shuffle(possible_start_points.begin(), possible_start_points.end(), this->rng);
+        if (this->num_start_points > possible_start_points.size()) {
+            std::cout << this->num_start_points << " starting points were requested, but there are only "
+                      << possible_start_points.size() << " available" << std::endl;
+        }
+
         for (int i = 0; i < possible_start_points.size() && i < this->num_start_points; ++i) {
             std::cout << "Starting in position " << possible_start_points[i] << std::endl;
             fillPoint(possible_start_points[i]);
