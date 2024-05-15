@@ -262,7 +262,7 @@ public:
                 for (auto neighbour: this->getNeighboursOfPoint(point)) {
                     Pixel *neighbour_pixel = this->getPixelAtPoint(neighbour);
                     if (!neighbour_pixel->is_filled && !neighbour_pixel->is_available) {
-                        this->getPixelAtPoint(neighbour)->is_available = true;
+                        neighbour_pixel->is_available = true;
                         availablePoints.push_back(neighbour);
                     }
                 }
@@ -276,8 +276,7 @@ public:
             float best_difference = std::numeric_limits<float>::max();
             // Find the point that has neighbours that are closest
             for (auto point: availablePoints) {
-                float neighbourDiff = this->getNeighbourDifference(point, colour,
-                                                                   neighbour_average = neighbour_average);
+                float neighbourDiff = this->getNeighbourDifference(point, colour, neighbour_average);
                 if (neighbourDiff < best_difference) {
                     best_difference = neighbourDiff;
                     best_point = point;
@@ -293,7 +292,9 @@ public:
                 Pixel *neighbourPixel = this->getPixelAtPoint(neighbour);
                 if (!neighbourPixel->is_filled && !neighbourPixel->is_available) {
                     neighbourPixel->is_available = true;
-                    availablePoints.push_back(neighbour);
+                    auto iter = availablePoints.begin();
+                    std::advance(iter, this->rng() % availablePoints.size());
+                    availablePoints.insert(iter, neighbour);
                 }
             }
 
