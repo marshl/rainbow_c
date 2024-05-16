@@ -129,6 +129,10 @@ int main(int argc, char *argv[]) {
                 } else if (start_type_str == "corner") {
                     std::cout << "Setting start position too corner(s)" << std::endl;
                     start_type = RainbowRenderer::START_TYPE_CORNER;
+                } else if (start_type_str == "horizontal") {
+                    start_type = RainbowRenderer::START_TYPE_HORIZONTAL_LINE;
+                } else if (start_type_str == "vertical") {
+                    start_type = RainbowRenderer::START_TYPE_VERTICAL_LINE;
                 } else if (start_type_str == "edge") {
                     start_type = RainbowRenderer::START_TYPE_EDGE;
                 } else if (start_type_str == "random") {

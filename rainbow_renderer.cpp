@@ -68,6 +68,20 @@ void RainbowRenderer::init() {
             possible_start_points.emplace_back(this->pixels_wide / 2, this->pixels_high / 2);
             break;
         }
+        case START_TYPE_HORIZONTAL_LINE: {
+            int midY = this->pixels_high / 2;
+            for (int x = 0; x < this->pixels_wide; ++x) {
+                possible_start_points.emplace_back(x, midY);
+            }
+            break;
+        }
+        case START_TYPE_VERTICAL_LINE: {
+            int midX = this->pixels_wide / 2;
+            for (int y = 0; y < this->pixels_high; ++y) {
+                possible_start_points.emplace_back(midX, y);
+            }
+            break;
+        }
         case START_TYPE_CORNER: {
             possible_start_points.emplace_back(0, 0);
             possible_start_points.emplace_back(this->pixels_wide - 1, 0);

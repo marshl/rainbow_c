@@ -33,6 +33,8 @@ public:
         START_TYPE_RANDOM,
         START_TYPE_EDGE,
         START_TYPE_CIRCLE,
+        START_TYPE_HORIZONTAL_LINE,
+        START_TYPE_VERTICAL_LINE,
     };
 
     enum FillMode {
