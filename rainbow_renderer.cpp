@@ -148,6 +148,7 @@ void RainbowRenderer::init() {
         std::cout << "Starting in position " << possible_start_points[i] << std::endl;
         fillPoint(possible_start_points[i]);
     }
+    std::cout << "Finished placing start points" << std::endl;
 }
 
 void RainbowRenderer::fill() {
@@ -168,7 +169,7 @@ void RainbowRenderer::fill() {
 void RainbowRenderer::edge_fill() {
     int partition = this->pixels_high * this->pixels_wide / 100;
     while (true) {
-        if (this->available_edges.empty() || this->colour_index == this->colours.size()) {
+        if (this->available_edges.empty() || this->colour_index >= this->colours.size()) {
             std::cout << "Out of edges or colours" << std::endl;
             break;
         }
@@ -204,7 +205,7 @@ void RainbowRenderer::edge_fill() {
                           << "%)"
                           << std::endl;
                 std::ostringstream stream;
-                stream << "output_" << this->colour_index << ".bmp";
+                stream << "output_" << int(this->colour_index / partition) << ".bmp";
                 std::cout << "Saving..." << std::flush;
                 this->writeToFile(stream.str());
                 std::cout << "Done" << std::endl;
@@ -278,7 +279,7 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
                       << " spaces available"
                       << std::endl;
             std::ostringstream stream;
-            stream << "output_" << this->colour_index << ".bmp";
+            stream << "output_" << int(this->colour_index / partition) << ".bmp";
             std::cout << "Saving..." << std::flush;
             this->writeToFile(stream.str());
             std::cout << "Done" << std::endl;
@@ -483,12 +484,12 @@ void RainbowRenderer::fillColours() {
 
 
 /// Fills the pixel at the given point
-/// \param point The pointto place the pixel at
+/// \param point The point to place the pixel at
 void RainbowRenderer::fillPoint(Point &point) {
     this->available_edges.push_back(point);
-    Pixel *centre_pixel = getPixelAtPoint(point);
-    centre_pixel->colour = this->colours[this->colour_index];
-    centre_pixel->is_filled = true;
+    Pixel *pixel = getPixelAtPoint(point);
+    pixel->colour = this->colours[this->colour_index];
+    pixel->is_filled = true;
     ++this->colour_index;
 }
 
