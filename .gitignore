@@ -9,3 +9,5 @@
 /CppProperties.json
 /.idea/
 /rainbow_c.vcxproj.user
+/Debug/
+/Release/

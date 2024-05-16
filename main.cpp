@@ -267,6 +267,7 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Invalid seed argument " << optarg << std::endl;
                     return 1;
                 }
+                std::cout << "Setting starting seed to " << seed << std::endl;
                 rainbow_renderer.setSeed(seed);
                 break;
             }
