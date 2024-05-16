@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     auto rainbow_renderer = new RainbowRenderer();
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:")) != -1) {
         switch (c) {
             case 'w': { // Width
                 int pixelsWide = (int) strtol(optarg, nullptr, 0);
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
             case '?': {
                 if (optopt == 'h' || optopt == 'w' || optopt == 'c' || optopt == 'd' || optopt == 'f' ||
                     optopt == 'p') {
-                    std::cerr << "Option -" << optopt << " requires an argument" << std::endl;
+                    std::cerr << "Option -" << char(optopt) << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
                     std::cerr << "Unknown option -" << char(optopt) << std::endl;
                     fprintf(stderr, "Unknown option `-%c'.\n", optopt);
