@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <stdexcept>
+#include <cstdint>
 
 #pragma pack(push, 1)
 struct BMPFileHeader {
