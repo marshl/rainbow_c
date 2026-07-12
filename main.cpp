@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
             }
             case 'l': { // Minimum luminosity
                 float minLuminosity = std::stof(optarg);
-                if (minLuminosity <= 0 || minLuminosity >= 1.0) {
+                if (minLuminosity < 0 || minLuminosity > 1.0) {
                     std::cerr << "Minimum luminosity must be between 0 and 1 " << std::endl;
                     return 1;
                 }
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
             }
             case 'L': { // Maximum luminosity
                 float maxLuminosity = strtof(optarg, nullptr);
-                if (maxLuminosity <= 0 || maxLuminosity >= 1.0) {
+                if (maxLuminosity < 0 || maxLuminosity > 1.0) {
                     std::cerr << "Minimum luminosity must be between 0 and 1" << std::endl;
                     return 1;
                 }
