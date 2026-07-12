@@ -220,7 +220,8 @@ int main(int argc, char *argv[]) {
                 return 1;
             }
             default:
-                abort();
+                std::cerr << "Unknown getopt option: " << char(c) << std::endl;
+                return 1;
         }
     }
 
