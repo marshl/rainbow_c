@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     RainbowRenderer::StartType start_type;
     RainbowRenderer::FillMode fill_mode;
 
-    auto rainbow_renderer = new RainbowRenderer();
+    RainbowRenderer rainbow_renderer;
 
     int c;
     while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:")) != -1) {
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Setting renderer width to " << pixelsWide << std::endl;
-                rainbow_renderer->setPixelsWide(pixelsWide);
+                rainbow_renderer.setPixelsWide(pixelsWide);
                 break;
             }
             case 'h': { // Height
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Setting renderer height to " << pixelsHigh << std::endl;
-                rainbow_renderer->setPixelsHigh(pixelsHigh);
+                rainbow_renderer.setPixelsHigh(pixelsHigh);
                 break;
             }
             case 'H': { // Starting hues
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Adding a starting hue of " << hue << std::endl;
-                rainbow_renderer->addStartingHue(hue);
+                rainbow_renderer.addStartingHue(hue);
                 break;
             }
             case 'l': { // Minimum luminosity
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Setting the minimum luminosity to " << minLuminosity << std::endl;
-                rainbow_renderer->setMinimumLuminosity(minLuminosity);
+                rainbow_renderer.setMinimumLuminosity(minLuminosity);
                 break;
             }
             case 'L': { // Maximum luminosity
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Setting the maximum luminosity to " << maxLuminosity << std::endl;
-                rainbow_renderer->setMaximumLuminosity(maxLuminosity);
+                rainbow_renderer.setMaximumLuminosity(maxLuminosity);
                 break;
             }
             case 's': { // Minimum saturation
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Setting the minimum saturation to " << minSaturation << std::endl;
-                rainbow_renderer->setMinimumSaturation(minSaturation);
+                rainbow_renderer.setMinimumSaturation(minSaturation);
                 break;
             }
             case 'S': { // Maximum saturation
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Setting the maximum saturation to " << maxSaturation << std::endl;
-                rainbow_renderer->setMaximumSaturation(maxSaturation);
+                rainbow_renderer.setMaximumSaturation(maxSaturation);
                 break;
             }
             case 'c': { // Colour depth
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 std::cout << "Setting the colour depth to " << colourDepth << std::endl;
-                rainbow_renderer->setColourDepth(colourDepth);
+                rainbow_renderer.setColourDepth(colourDepth);
                 break;
             }
             case 'd': { // Colour difference function
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Unknown difference type " << diff_type << std::endl;
                     return 1;
                 }
-                rainbow_renderer->setDifferenceFunction(difference_func);
+                rainbow_renderer.setDifferenceFunction(difference_func);
                 break;
             }
             case 'p': { // Starting positions
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Unknown start type " << start_type_str << std::endl;
                     return 1;
                 }
-                rainbow_renderer->setStartType(start_type);
+                rainbow_renderer.setStartType(start_type);
                 break;
             }
             case 'f': { // Fill mode
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Unknown fill mode " << fill_mode_str << std::endl;
                     return 1;
                 }
-                rainbow_renderer->setFillMode(fill_mode);
+                rainbow_renderer.setFillMode(fill_mode);
                 break;
             }
             case 'o': { // Initial colour ordering
@@ -170,24 +170,24 @@ int main(int argc, char *argv[]) {
                     switch (it) {
                         case 'r':
                         case 'R':
-                            rainbow_renderer->addColourOrder({COLOUR_ORDER_RANDOM, false});
+                            rainbow_renderer.addColourOrder({COLOUR_ORDER_RANDOM, false});
                             std::cout << "Randomising colours" << std::endl;
                             break;
                         case 'h':
                         case 'H':
-                            rainbow_renderer->addColourOrder({COLOUR_ORDER_HUE, it == 'H'});
+                            rainbow_renderer.addColourOrder({COLOUR_ORDER_HUE, it == 'H'});
                             std::cout << "Sorting colours by hue " << (it == 'h' ? "ascending" : "descending")
                                       << std::endl;
                             break;
                         case 's':
                         case 'S':
-                            rainbow_renderer->addColourOrder({COLOUR_ORDER_SAT, it == 'S'});
+                            rainbow_renderer.addColourOrder({COLOUR_ORDER_SAT, it == 'S'});
                             std::cout << "Sorting colours by saturation " << (it == 's' ? "ascending" : "descending")
                                       << std::endl;
                             break;
                         case 'l':
                         case 'L':
-                            rainbow_renderer->addColourOrder({COLOUR_ORDER_LUM, it == 'L'});
+                            rainbow_renderer.addColourOrder({COLOUR_ORDER_LUM, it == 'L'});
                             std::cout << "Sorting colours by luminosity " << (it == 'l' ? "ascending" : "descending")
                                       << std::endl;
                             break;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Invalid seed argument " << optarg << std::endl;
                     return 1;
                 }
-                rainbow_renderer->setSeed(seed);
+                rainbow_renderer.setSeed(seed);
                 break;
             }
             case '?': {
@@ -227,18 +227,17 @@ int main(int argc, char *argv[]) {
     for (; optind < argc; optind++) {
         int num_start_points = (int) strtol(argv[optind], nullptr, 0);
         if (num_start_points > 0) {
-            rainbow_renderer->setNumStartPoints(num_start_points);
+            rainbow_renderer.setNumStartPoints(num_start_points);
         }
     }
 
     time_t start_time = time(nullptr);
-    rainbow_renderer->init();
-    rainbow_renderer->fill();
+    rainbow_renderer.init();
+    rainbow_renderer.fill();
     time_t end_time = time(nullptr);
     std::cout << "Completed in " << (end_time - start_time) << "s" << std::endl;
 
-    rainbow_renderer->writeToFile("output.bmp");
+    rainbow_renderer.writeToFile("output.bmp");
 
-    delete rainbow_renderer;
     return 0;
 }
