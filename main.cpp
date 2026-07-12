@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
             }
             case 's': { // Minimum saturation
                 float minSaturation = std::stof(optarg);
-                if (minSaturation <= 0 || minSaturation >= 1.0) {
+                if (minSaturation < 0 || minSaturation > 1.0) {
                     std::cerr << "Minimum saturation must be between 0 and 1 " << std::endl;
                     return 1;
                 }
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
             }
             case 'S': { // Maximum saturation
                 float maxSaturation = strtof(optarg, nullptr);
-                if (maxSaturation <= 0 || maxSaturation >= 1.0) {
+                if (maxSaturation < 0 || maxSaturation > 1.0) {
                     std::cerr << "Maximum saturation must be between 0 and 1" << std::endl;
                     return 1;
                 }
