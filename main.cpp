@@ -1,6 +1,5 @@
 #include <iostream>
 #include <cstdlib>
-#include <list>
 #include <random>
 #include <ctime>
 #include <unistd.h>

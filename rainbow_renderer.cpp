@@ -198,14 +198,14 @@ void RainbowRenderer::edge_fill() {
             break;
         }
         const Colour &current_colour = this->colours[this->colour_index];
-        auto it = this->available_edges.begin();
-        Point best_point = *it;
-        float best_difference = this->difference_function(current_colour, getPixelAtPoint(*it)->colour);
-        ++it;
-        for (; it != this->available_edges.end(); ++it) {
-            float diff = this->difference_function(current_colour, getPixelAtPoint(*it)->colour);
+        std::size_t best_index = 0;
+        Point best_point = this->available_edges[0];
+        float best_difference = this->difference_function(current_colour, getPixelAtPoint(best_point)->colour);
+        for (std::size_t i = 1; i < this->available_edges.size(); ++i) {
+            float diff = this->difference_function(current_colour, getPixelAtPoint(this->available_edges[i])->colour);
             if (diff < best_difference) {
-                best_point = *it;
+                best_index = i;
+                best_point = this->available_edges[i];
                 best_difference = diff;
             }
         }
@@ -243,7 +243,10 @@ void RainbowRenderer::edge_fill() {
         }
 
         if (neighbour_index == neighbour_count) {
-            this->available_edges.remove(best_point);
+            // Remove the best point without requiring moving all indices
+            // after the best index
+            this->available_edges[best_index] = this->available_edges.back();
+            this->available_edges.pop_back();
         }
     }
 }
@@ -255,7 +258,7 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
                                    : 0;
     const int progress_partition = total_pixels < 100 ? 1 : total_pixels / 100;
     // List of places where pixels can be placed (next to neighbours)
-    std::list<Point> availablePoints;
+    std::vector<Point> availablePoints;
     // Find all neighbours of existing points and add them to the available list
     for (int y = 0; y < this->pixels_high; ++y) {
         for (int x = 0; x < this->pixels_wide; ++x) {
@@ -277,15 +280,15 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
     // While there are colours to place and available spots to place them
     for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
         Colour &colour = this->colours[colour_index];
-        auto it = availablePoints.begin();
-        Point best_point = *it;
-        float best_difference = this->getNeighbourDifference(*it, colour, neighbour_average);
-        ++it;
-        for (; it != availablePoints.end(); ++it) {
-            float neighbourDiff = this->getNeighbourDifference(*it, colour, neighbour_average);
+        std::size_t best_index = 0;
+        Point best_point = availablePoints[0];
+        float best_difference = this->getNeighbourDifference(best_point, colour, neighbour_average);
+        for (std::size_t i = 1; i < availablePoints.size(); ++i) {
+            float neighbourDiff = this->getNeighbourDifference(availablePoints[i], colour, neighbour_average);
             if (neighbourDiff < best_difference) {
                 best_difference = neighbourDiff;
-                best_point = *it;
+                best_index = i;
+                best_point = availablePoints[i];
             }
         }
 
@@ -293,20 +296,19 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
         pixel->is_filled = true;
         pixel->is_available = false;
         pixel->colour = colour;
-        availablePoints.remove(best_point);
+        availablePoints[best_index] = availablePoints.back();
+        availablePoints.pop_back();
 
         for (auto neighbour: this->getNeighboursOfPoint(best_point)) {
             Pixel *neighbourPixel = this->getPixelAtPoint(neighbour);
             if (!neighbourPixel->is_filled && !neighbourPixel->is_available) {
                 neighbourPixel->is_available = true;
-                auto iter = availablePoints.begin();
-                std::advance(iter, this->rng() % availablePoints.size());
-                availablePoints.insert(iter, neighbour);
+                availablePoints.push_back(neighbour);
             }
         }
 
         if (this->colour_index % progress_partition == 0) {
-            std::cout << "Placed " << this->colour_index << "/" << total_pixels << " pixels ( "
+            std::cout << "Placed " << this->colour_index << "/" << total_pixels << " pixels ("
                     << ((float) this->colour_index / float(total_pixels) * 100) << "%) with "
                     << availablePoints.size()
                     << " spaces available"
@@ -359,9 +361,9 @@ void RainbowRenderer::writeToFile(const std::string &_filename) {
 void RainbowRenderer::cleanFilledEdges() {
     std::cout << "Cleaning filled edges... " << std::flush;
     int removedEdges = 0;
-    auto iter = this->available_edges.begin();
-    while (iter != this->available_edges.end()) {
-        Point edgePoint = *iter;
+    std::size_t i = 0;
+    while (i < this->available_edges.size()) {
+        Point edgePoint = this->available_edges[i];
         auto neighbours = getNeighboursOfPoint(edgePoint);
         bool hasOpenNeighbours = false;
         for (auto &neighbour_point: neighbours) {
@@ -372,10 +374,11 @@ void RainbowRenderer::cleanFilledEdges() {
             }
         }
         if (!hasOpenNeighbours) {
-            iter = this->available_edges.erase(iter);
+            this->available_edges[i] = this->available_edges.back();
+            this->available_edges.pop_back();
             removedEdges += 1;
         } else {
-            ++iter;
+            ++i;
         }
     }
     std::cout << "Done (cleaned " << removedEdges << " edges)" << std::endl;

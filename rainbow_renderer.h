@@ -2,7 +2,6 @@
 #define RAINBOW_C_RAINBOW_RENDERER_H
 
 #include <vector>
-#include <list>
 #include <optional>
 #include <random>
 
@@ -113,7 +112,7 @@ private:
 
     std::vector<Colour> colours;
     std::vector<Pixel> pixels;
-    std::list<Point> available_edges;
+    std::vector<Point> available_edges;
     std::size_t colour_index = 0;
 
     /// Get the pixel at the given x and y coordinates
