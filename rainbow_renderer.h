@@ -1,13 +1,10 @@
 #ifndef RAINBOW_C_RAINBOW_RENDERER_H
 #define RAINBOW_C_RAINBOW_RENDERER_H
 
-#include <set>
 #include <vector>
 #include <list>
-#include <sstream>
 #include <random>
 
-#include "bmp.h"
 #include "colour.h"
 #include "pixel.h"
 #include "point.h"

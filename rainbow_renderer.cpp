@@ -1,5 +1,10 @@
 #include "rainbow_renderer.h"
 
+#include "bmp.h"
+
+#include <set>
+#include <sstream>
+
 void RainbowRenderer::setSeed(unsigned int _seed) {
     this->seed = _seed;
 }
