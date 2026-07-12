@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
             case 'L': { // Maximum luminosity
                 float maxLuminosity = strtof(optarg, nullptr);
                 if (maxLuminosity < 0 || maxLuminosity > 1.0) {
-                    std::cerr << "Minimum luminosity must be between 0 and 1" << std::endl;
+                    std::cerr << "Maximum luminosity must be between 0 and 1" << std::endl;
                     return 1;
                 }
                 std::cout << "Setting the maximum luminosity to " << maxLuminosity << std::endl;
