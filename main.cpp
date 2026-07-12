@@ -5,6 +5,7 @@
 #include <ctime>
 #include <unistd.h>
 
+#include "bmp.h"
 #include "colour.h"
 #include "rainbow_renderer.h"
 
@@ -268,11 +269,18 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for (; optind < argc; optind++) {
+    if (argc - optind > 1) {
+        std::cerr << "Expected at most one positional argument (num_start_points), got "
+                << (argc - optind) << std::endl;
+        return 1;
+    }
+    if (optind < argc) {
         int num_start_points = (int) strtol(argv[optind], nullptr, 0);
-        if (num_start_points > 0) {
-            rainbow_renderer.setNumStartPoints(num_start_points);
+        if (num_start_points <= 0) {
+            std::cerr << "Invalid num_start_points argument: " << argv[optind] << std::endl;
+            return 1;
         }
+        rainbow_renderer.setNumStartPoints(num_start_points);
     }
 
     time_t start_time = time(nullptr);
