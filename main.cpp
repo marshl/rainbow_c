@@ -57,7 +57,14 @@ int main(int argc, char *argv[]) {
             }
             case 'l': {
                 // Minimum luminosity
-                float minLuminosity = std::stof(optarg);
+                float minLuminosity;
+                try {
+                    minLuminosity = std::stof(optarg);
+                } catch (const std::exception &) {
+                    std::cerr << "Invalid minimum luminosity argument " << optarg << std::endl;
+                    return 1;
+                }
+
                 if (minLuminosity < 0 || minLuminosity > 1.0) {
                     std::cerr << "Minimum luminosity must be between 0 and 1 " << std::endl;
                     return 1;
@@ -68,7 +75,14 @@ int main(int argc, char *argv[]) {
             }
             case 'L': {
                 // Maximum luminosity
-                float maxLuminosity = strtof(optarg, nullptr);
+                float maxLuminosity;
+                try {
+                    maxLuminosity = std::stof(optarg);
+                } catch (const std::exception &) {
+                    std::cerr << "Invalid maximum luminosity argument " << optarg << std::endl;
+                    return 1;
+                }
+
                 if (maxLuminosity < 0 || maxLuminosity > 1.0) {
                     std::cerr << "Maximum luminosity must be between 0 and 1" << std::endl;
                     return 1;
@@ -79,7 +93,14 @@ int main(int argc, char *argv[]) {
             }
             case 's': {
                 // Minimum saturation
-                float minSaturation = std::stof(optarg);
+                float minSaturation;
+                try {
+                    minSaturation = std::stof(optarg);
+                } catch (const std::exception&) {
+                    std::cerr << "Invalid minimum saturation argument " << optarg << std::endl;
+                    return 1;
+                }
+
                 if (minSaturation < 0 || minSaturation > 1.0) {
                     std::cerr << "Minimum saturation must be between 0 and 1 " << std::endl;
                     return 1;
@@ -90,7 +111,14 @@ int main(int argc, char *argv[]) {
             }
             case 'S': {
                 // Maximum saturation
-                float maxSaturation = strtof(optarg, nullptr);
+                float maxSaturation;
+                try {
+                    maxSaturation = std::stof(optarg);
+                } catch (const std::exception&) {
+                    std::cerr << "Invalid maximum saturation argument " << optarg << std::endl;
+                    return 1;
+                }
+
                 if (maxSaturation < 0 || maxSaturation > 1.0) {
                     std::cerr << "Maximum saturation must be between 0 and 1" << std::endl;
                     return 1;
