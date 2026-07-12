@@ -111,7 +111,7 @@ private:
     std::vector<Colour> colours;
     std::vector<Pixel> pixels;
     std::list<Point> available_edges;
-    long colour_index = 0;
+    std::size_t colour_index = 0;
 
     /// Get the pixel at the given x and y coordinates
     /// \param x The x coordinate
