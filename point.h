@@ -2,6 +2,7 @@
 #define RAINBOW_C_POINT_H
 
 #include <iostream>
+#include <tuple>
 
 /// An X and Y point
 struct Point {
@@ -23,7 +24,7 @@ struct Point {
     }
 
     bool operator<(const Point &other) const {
-        return other.x < this->x || other.y < this->y;
+        return std::tie(x, y) < std::tie(other.x, other.y);
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Point &p) {
