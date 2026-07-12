@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
             case 'w': { // Width
                 int pixelsWide = (int) strtol(optarg, nullptr, 0);
                 if (pixelsWide <= 0) {
-                    std::cout << "Invalid width argument " << optarg << std::endl;
+                    std::cerr << "Invalid width argument " << optarg << std::endl;
                     return 1;
                 }
                 std::cout << "Setting renderer width to " << pixelsWide << std::endl;
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
             case 'h': { // Height
                 int pixelsHigh = (int) strtol(optarg, nullptr, 0);
                 if (pixelsHigh <= 0) {
-                    std::cout << "Invalid height argument " << optarg << std::endl;
+                    std::cerr << "Invalid height argument " << optarg << std::endl;
                     return 1;
                 }
                 std::cout << "Setting renderer height to " << pixelsHigh << std::endl;
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
             case 'H': { // Starting hues
                 int hue = (int) strtol(optarg, nullptr, 0);
                 if (hue < 0 || hue > 360) {
-                    std::cout << "Starting hue must be between 0 and 360 " << std::endl;
+                    std::cerr << "Starting hue must be between 0 and 360 " << std::endl;
                     return 1;
                 }
                 std::cout << "Adding a starting hue of " << hue << std::endl;
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
             case 'c': { // Colour depth
                 int colourDepth = (int) strtol(optarg, nullptr, 0);
                 if (colourDepth <= 0) {
-                    std::cout << "Invalid colour depth argument " << optarg << std::endl;
+                    std::cerr << "Invalid colour depth argument " << optarg << std::endl;
                     return 1;
                 }
                 std::cout << "Setting the colour depth to " << colourDepth << std::endl;
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
                 } else if (diff_type == "hue") {
                     difference_func = getColourHueDiff;
                 } else {
-                    std::cout << "Unknown difference type " << diff_type << std::endl;
+                    std::cerr << "Unknown difference type " << diff_type << std::endl;
                     return 1;
                 }
                 rainbow_renderer.setDifferenceFunction(difference_func);
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
                 } else if (start_type_str == "circle") {
                     start_type = RainbowRenderer::START_TYPE_CIRCLE;
                 } else {
-                    std::cout << "Unknown start type " << start_type_str << std::endl;
+                    std::cerr << "Unknown start type " << start_type_str << std::endl;
                     return 1;
                 }
                 rainbow_renderer.setStartType(start_type);
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
             case 'r': {
                 int seed = (int) strtol(optarg, nullptr, 0);
                 if (seed <= 0) {
-                    std::cout << "Invalid seed argument " << optarg << std::endl;
+                    std::cerr << "Invalid seed argument " << optarg << std::endl;
                     return 1;
                 }
                 rainbow_renderer.setSeed(seed);
@@ -213,7 +213,6 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Option -" << char(optopt) << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
                     std::cerr << "Unknown option -" << char(optopt) << std::endl;
-                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
                 } else {
                     std::cerr << "Unknown option character" << optopt << std::endl;
                 }
