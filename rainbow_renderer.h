@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <list>
+#include <optional>
 #include <random>
 
 #include "colour.h"
@@ -94,7 +95,7 @@ private:
     int pixels_wide = 256;
     int pixels_high = 256;
     int colour_depth = 0;
-    int num_start_points = std::numeric_limits<int>::max();
+    std::optional<int> num_start_points;
     StartType start_type = StartType::START_TYPE_CENTRE;
     FillMode fill_mode = FillMode::FILL_MODE_EDGE;
     std::vector<ColourOrdering> colour_ordering;

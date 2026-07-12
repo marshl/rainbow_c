@@ -3,6 +3,7 @@
 #include "bmp.h"
 
 #include <cmath>
+#include <limits>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -69,7 +70,6 @@ void RainbowRenderer::setMaximumSaturation(float saturation) {
 void RainbowRenderer::init() {
     this->rng = std::default_random_engine(this->seed);
     this->pixels.resize(this->pixels_wide * this->pixels_high);
-    this->fillColours();
     std::vector<Point> possible_start_points;
 
     switch (this->start_type) {
@@ -147,13 +147,20 @@ void RainbowRenderer::init() {
         }
     }
 
-    std::shuffle(possible_start_points.begin(), possible_start_points.end(), this->rng);
-    if (this->num_start_points > possible_start_points.size()) {
-        std::cout << this->num_start_points << " starting points were requested, but there are only "
-                << possible_start_points.size() << " available" << std::endl;
+    if (this->num_start_points.has_value() &&
+        static_cast<std::size_t>(*this->num_start_points) > possible_start_points.size()) {
+        std::ostringstream msg;
+        msg << "Requested " << *this->num_start_points
+            << " start points, but only " << possible_start_points.size()
+            << " are available for the chosen start type";
+        throw std::runtime_error(msg.str());
     }
 
-    for (int i = 0; i < possible_start_points.size() && i < this->num_start_points; ++i) {
+    this->fillColours();
+
+    std::shuffle(possible_start_points.begin(), possible_start_points.end(), this->rng);
+    std::size_t cap = this->num_start_points.value_or(possible_start_points.size());
+    for (std::size_t i = 0; i < possible_start_points.size() && i < cap; ++i) {
         std::cout << "Starting in position " << possible_start_points[i] << std::endl;
         fillPoint(possible_start_points[i]);
     }

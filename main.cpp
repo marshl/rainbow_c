@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     RainbowRenderer rainbow_renderer;
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:")) != -1) {
         switch (c) {
             case 'w': {
                 // Width
@@ -250,11 +250,22 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer.setSeed(seed);
                 break;
             }
+            case 'n': {
+                // Number of starting points
+                int num_start_points = (int) strtol(optarg, nullptr, 0);
+                if (num_start_points <= 0) {
+                    std::cerr << "Invalid num_start_points argument " << optarg << std::endl;
+                    return 1;
+                }
+                std::cout << "Setting number of start points to " << num_start_points << std::endl;
+                rainbow_renderer.setNumStartPoints(num_start_points);
+                break;
+            }
             case '?': {
                 if (optopt == 'h' || optopt == 'w' || optopt == 'H' || optopt == 'c' ||
                     optopt == 'd' || optopt == 'r' || optopt == 'f' || optopt == 'o' ||
                     optopt == 'l' || optopt == 'L' || optopt == 's' || optopt == 'S' ||
-                    optopt == 'p') {
+                    optopt == 'p' || optopt == 'n') {
                     std::cerr << "Option -" << char(optopt) << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
                     std::cerr << "Unknown option -" << char(optopt) << std::endl;
@@ -269,18 +280,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (argc - optind > 1) {
-        std::cerr << "Expected at most one positional argument (num_start_points), got "
-                << (argc - optind) << std::endl;
-        return 1;
-    }
     if (optind < argc) {
-        int num_start_points = (int) strtol(argv[optind], nullptr, 0);
-        if (num_start_points <= 0) {
-            std::cerr << "Invalid num_start_points argument: " << argv[optind] << std::endl;
-            return 1;
-        }
-        rainbow_renderer.setNumStartPoints(num_start_points);
+        std::cerr << "Unexpected positional argument: " << argv[optind] << std::endl;
+        return 1;
     }
 
     time_t start_time = time(nullptr);
