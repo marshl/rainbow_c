@@ -2,8 +2,11 @@
 
 #include "bmp.h"
 
+#include <cmath>
 #include <set>
 #include <sstream>
+
+constexpr double PI = 3.14159265358979323846;
 
 void RainbowRenderer::setSeed(unsigned int _seed) {
     this->seed = _seed;
@@ -107,7 +110,7 @@ void RainbowRenderer::init() {
             break;
         case START_TYPE_CIRCLE: {
             // Make a circle such that the inner area and outer area are the same (for a square board)
-            int radius = int(float(std::min(this->pixels_wide, this->pixels_high)) / sqrt(2 * M_PI));
+            int radius = int(float(std::min(this->pixels_wide, this->pixels_high)) / sqrt(2 * PI));
             int f = 1 - radius;
             int ddF_x = 0;
             int ddF_y = -2 * radius;
