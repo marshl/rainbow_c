@@ -24,7 +24,6 @@ struct ColourOrdering {
 
 class RainbowRenderer {
 public:
-
     enum StartType {
         START_TYPE_CENTRE,
         START_TYPE_CORNER,
@@ -50,6 +49,8 @@ public:
     void setNumStartPoints(int _num_start_points);
 
     void setColourDepth(int _colour_depth);
+
+    void setNumIntermediateFrames(int _num_frames);
 
     void setDifferenceFunction(float (*_func)(const Colour &, const Colour &));
 
@@ -95,6 +96,7 @@ private:
     int pixels_wide = 256;
     int pixels_high = 256;
     int colour_depth = 0;
+    int num_intermediate_frames = 0;
     std::optional<int> num_start_points;
     StartType start_type = StartType::START_TYPE_CENTRE;
     FillMode fill_mode = FillMode::FILL_MODE_EDGE;
@@ -137,7 +139,6 @@ private:
     /// Fills the pixel at the given point
     /// \param point The pointto place the pixel at
     void fillPoint(Point &point);
-
 };
 
 #endif //RAINBOW_C_RAINBOW_RENDERER_H

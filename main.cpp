@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     RainbowRenderer rainbow_renderer;
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:F:")) != -1) {
         switch (c) {
             case 'w': {
                 // Width
@@ -261,11 +261,22 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer.setNumStartPoints(num_start_points);
                 break;
             }
+            case 'F': {
+                // Number of intermediate frames to save (0 is the default, and causes no extra images to be saved)
+                int num_frames = (int) strtol(optarg, nullptr, 0);
+                if (num_frames < 0) {
+                    std::cerr << "Invalid num_frames argument " << optarg << std::endl;
+                    return 1;
+                }
+                std::cout << "Setting number of intermediate frames to " << num_frames << std::endl;
+                rainbow_renderer.setNumIntermediateFrames(num_frames);
+                break;
+            }
             case '?': {
                 if (optopt == 'h' || optopt == 'w' || optopt == 'H' || optopt == 'c' ||
                     optopt == 'd' || optopt == 'r' || optopt == 'f' || optopt == 'o' ||
                     optopt == 'l' || optopt == 'L' || optopt == 's' || optopt == 'S' ||
-                    optopt == 'p' || optopt == 'n') {
+                    optopt == 'p' || optopt == 'n' || optopt == 'F') {
                     std::cerr << "Option -" << char(optopt) << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
                     std::cerr << "Unknown option -" << char(optopt) << std::endl;

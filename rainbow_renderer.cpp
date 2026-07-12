@@ -30,6 +30,10 @@ void RainbowRenderer::setColourDepth(int _colour_depth) {
     this->colour_depth = _colour_depth;
 }
 
+void RainbowRenderer::setNumIntermediateFrames(int _num_frames) {
+    this->num_intermediate_frames = _num_frames;
+}
+
 void RainbowRenderer::setDifferenceFunction(float (*_func)(const Colour &, const Colour &)) {
     this->difference_function = _func;
 }
@@ -151,8 +155,8 @@ void RainbowRenderer::init() {
         static_cast<std::size_t>(*this->num_start_points) > possible_start_points.size()) {
         std::ostringstream msg;
         msg << "Requested " << *this->num_start_points
-            << " start points, but only " << possible_start_points.size()
-            << " are available for the chosen start type";
+                << " start points, but only " << possible_start_points.size()
+                << " are available for the chosen start type";
         throw std::runtime_error(msg.str());
     }
 
@@ -173,7 +177,7 @@ void RainbowRenderer::fill() {
             this->edge_fill();
             break;
         case FILL_MODE_NEIGHBOUR:
-            this->neighbour_fill();
+            this->neighbour_fill(false);
             break;
         case FILL_MODE_NEIGHBOUR_AVERAGE:
             this->neighbour_fill(true);
@@ -183,7 +187,11 @@ void RainbowRenderer::fill() {
 
 /// Fills remaining spaces with pixels
 void RainbowRenderer::edge_fill() {
-    int partition = this->pixels_high * this->pixels_wide / 100;
+    const int total_pixels = this->pixels_high * this->pixels_wide;
+    const int save_partition = this->num_intermediate_frames > 0
+                                   ? total_pixels / this->num_intermediate_frames
+                                   : 0;
+    const int progress_partition = total_pixels < 100 ? 1 : total_pixels / 100;
     while (true) {
         if (this->available_edges.empty() || this->colour_index >= this->colours.size()) {
             std::cout << "Out of edges or colours" << std::endl;
@@ -217,17 +225,19 @@ void RainbowRenderer::edge_fill() {
             this->available_edges.push_back(neighbour);
             ++this->colour_index;
 
-            if (this->colour_index % partition == 0) {
+            if (this->colour_index % progress_partition == 0) {
                 std::cout << "Step " << this->colour_index << " with " << this->available_edges.size() << " edges ("
-                        << ((float) this->colour_index / float(this->pixels_high * this->pixels_wide) * 100)
+                        << ((float) this->colour_index / float(total_pixels) * 100)
                         << "%)"
                         << std::endl;
+                this->cleanFilledEdges();
+            }
+            if (save_partition > 0 && this->colour_index % save_partition == 0) {
                 std::ostringstream stream;
-                stream << "output_" << int(this->colour_index / partition) << ".bmp";
-                std::cout << "Saving..." << std::flush;
+                stream << "output_" << int(this->colour_index / save_partition) << ".bmp";
+                std::cout << "Saving... " << std::flush;
                 this->writeToFile(stream.str());
                 std::cout << "Done" << std::endl;
-                this->cleanFilledEdges();
             }
             break;
         }
@@ -240,7 +250,10 @@ void RainbowRenderer::edge_fill() {
 
 void RainbowRenderer::neighbour_fill(bool neighbour_average) {
     const int total_pixels = this->pixels_high * this->pixels_wide;
-    const int partition = total_pixels / 100;
+    const int save_partition = this->num_intermediate_frames > 0
+                                   ? total_pixels / this->num_intermediate_frames
+                                   : 0;
+    const int progress_partition = total_pixels < 100 ? 1 : total_pixels / 100;
     // List of places where pixels can be placed (next to neighbours)
     std::list<Point> availablePoints;
     // Find all neighbours of existing points and add them to the available list
@@ -292,15 +305,17 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
             }
         }
 
-        if (this->colour_index % partition == 0) {
+        if (this->colour_index % progress_partition == 0) {
             std::cout << "Placed " << this->colour_index << "/" << total_pixels << " pixels ( "
                     << ((float) this->colour_index / float(total_pixels) * 100) << "%) with "
                     << availablePoints.size()
                     << " spaces available"
                     << std::endl;
+        }
+        if (save_partition > 0 && this->colour_index % save_partition == 0) {
             std::ostringstream stream;
-            stream << "output_" << int(this->colour_index / partition) << ".bmp";
-            std::cout << "Saving..." << std::flush;
+            stream << "output_" << int(this->colour_index / save_partition) << ".bmp";
+            std::cout << "Saving... " << std::flush;
             this->writeToFile(stream.str());
             std::cout << "Done" << std::endl;
         }
@@ -342,7 +357,7 @@ void RainbowRenderer::writeToFile(const std::string &_filename) {
 }
 
 void RainbowRenderer::cleanFilledEdges() {
-    std::cout << "Cleaning " << std::flush;
+    std::cout << "Cleaning filled edges... " << std::flush;
     int removedEdges = 0;
     auto iter = this->available_edges.begin();
     while (iter != this->available_edges.end()) {
