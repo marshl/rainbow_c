@@ -5,6 +5,7 @@
 #include <cmath>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 
 constexpr double PI = 3.14159265358979323846;
 
@@ -454,10 +455,11 @@ void RainbowRenderer::fillColours() {
     }
 
     if (this->colours.size() < this->pixels_wide * this->pixels_high) {
-        std::cout << "All colours were exhausted with only  "
+        std::ostringstream message;
+        message << "All colours were exhausted with only  "
                 << 100 * this->colours.size() / (this->pixels_wide * this->pixels_high)
                 << "% of the image covered. Please revise input parameters" << std::endl;
-        exit(1);
+        throw std::runtime_error(message.str());
     }
 
     // Default colour ordering if the user doesn't supply any

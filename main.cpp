@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
                 float minSaturation;
                 try {
                     minSaturation = std::stof(optarg);
-                } catch (const std::exception&) {
+                } catch (const std::exception &) {
                     std::cerr << "Invalid minimum saturation argument " << optarg << std::endl;
                     return 1;
                 }
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
                 float maxSaturation;
                 try {
                     maxSaturation = std::stof(optarg);
-                } catch (const std::exception&) {
+                } catch (const std::exception &) {
                     std::cerr << "Invalid maximum saturation argument " << optarg << std::endl;
                     return 1;
                 }
@@ -276,8 +276,14 @@ int main(int argc, char *argv[]) {
     }
 
     time_t start_time = time(nullptr);
-    rainbow_renderer.init();
-    rainbow_renderer.fill();
+    try {
+        rainbow_renderer.init();
+        rainbow_renderer.fill();
+    } catch (const std::exception &e) {
+        std::cerr << "Unexpected error: " << e.what() << std::endl;
+        return 1;
+    }
+
     time_t end_time = time(nullptr);
     std::cout << "Completed in " << (end_time - start_time) << "s" << std::endl;
 
