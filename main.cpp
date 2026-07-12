@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
                             break;
                         default:
                             std::cerr << "Unknown colour ordering " << it << std::endl;
-                            exit(1);
+                            return 1;
                     }
                 }
                 break;
