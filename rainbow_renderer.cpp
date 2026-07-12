@@ -192,23 +192,60 @@ void RainbowRenderer::edge_fill() {
                                    ? total_pixels / this->num_intermediate_frames
                                    : 0;
     const int progress_partition = total_pixels < 100 ? 1 : total_pixels / 100;
+
+    // Per-worker scratch for the parallel min-reduction. Allocated once
+    // outside the loop so the scan doesn't reallocate on every placement.
+    // Sized to num_workers(); each worker writes only its own slot.
+    std::vector<std::size_t> local_best_index(thread_pool_.num_workers(), 0);
+    std::vector<float> local_best_diff(thread_pool_.num_workers(),
+                                       std::numeric_limits<float>::max());
+
     while (true) {
         if (this->available_edges.empty() || this->colour_index >= this->colours.size()) {
             std::cout << "Out of edges or colours" << std::endl;
             break;
         }
         const Colour &current_colour = this->colours[this->colour_index];
-        std::size_t best_index = 0;
-        Point best_point = this->available_edges[0];
-        float best_difference = this->difference_function(current_colour, getPixelAtPoint(best_point)->colour);
-        for (std::size_t i = 1; i < this->available_edges.size(); ++i) {
-            float diff = this->difference_function(current_colour, getPixelAtPoint(this->available_edges[i])->colour);
-            if (diff < best_difference) {
-                best_index = i;
-                best_point = this->available_edges[i];
-                best_difference = diff;
+
+        // Reset slots to the "no result" sentinel. Workers that get a chunk
+        // overwrite their slot; workers that don't (when available_edges is
+        // smaller than num_workers()) lose the final reduction comparison.
+        std::fill(local_best_diff.begin(), local_best_diff.end(),
+                  std::numeric_limits<float>::max());
+
+        thread_pool_.parallel_range(this->available_edges.size(),
+                                    [&](std::size_t worker_id, std::size_t start, std::size_t end) {
+                                        // Each worker scans its own chunk [start, end) and records
+                                        // the local minimum in its dedicated slot. No locking needed
+                                        // because slots are per-worker.
+                                        std::size_t bi = start;
+                                        float bd = this->difference_function(
+                                            current_colour,
+                                            this->getPixelAtPoint(this->available_edges[start])->colour);
+                                        for (std::size_t i = start + 1; i < end; ++i) {
+                                            float d = this->difference_function(
+                                                current_colour,
+                                                this->getPixelAtPoint(this->available_edges[i])->colour);
+                                            if (d < bd) {
+                                                bd = d;
+                                                bi = i;
+                                            }
+                                        }
+                                        local_best_index[worker_id] = bi;
+                                        local_best_diff[worker_id] = bd;
+                                    });
+
+        // Sequential reduce over per-worker locals. N is tiny (num CPU
+        // cores), so this is essentially free.
+        std::size_t best_index = local_best_index[0];
+        float best_difference = local_best_diff[0];
+        for (std::size_t w = 1; w < thread_pool_.num_workers(); ++w) {
+            if (local_best_diff[w] < best_difference) {
+                best_difference = local_best_diff[w];
+                best_index = local_best_index[w];
             }
         }
+        Point best_point = this->available_edges[best_index];
 
         auto neighbours = getNeighboursOfPoint(best_point);
         int neighbour_count = (int) neighbours.size();
@@ -277,20 +314,54 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
         }
     }
 
+    // Per-worker scratch for the parallel min-reduction — allocated once
+    // outside the placement loop so the scan doesn't reallocate every
+    // iteration. Same pattern as edge_fill.
+    std::vector<std::size_t> local_best_index(thread_pool_.num_workers(), 0);
+    std::vector<float> local_best_diff(thread_pool_.num_workers(),
+                                       std::numeric_limits<float>::max());
+
     // While there are colours to place and available spots to place them
     for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
         Colour &colour = this->colours[colour_index];
-        std::size_t best_index = 0;
-        Point best_point = availablePoints[0];
-        float best_difference = this->getNeighbourDifference(best_point, colour, neighbour_average);
-        for (std::size_t i = 1; i < availablePoints.size(); ++i) {
-            float neighbourDiff = this->getNeighbourDifference(availablePoints[i], colour, neighbour_average);
-            if (neighbourDiff < best_difference) {
-                best_difference = neighbourDiff;
-                best_index = i;
-                best_point = availablePoints[i];
+
+        // Reset the diff slots so workers that don't get a chunk (when
+        // availablePoints is smaller than num_workers()) lose the reduce.
+        std::fill(local_best_diff.begin(), local_best_diff.end(),
+                  std::numeric_limits<float>::max());
+
+        thread_pool_.parallel_range(availablePoints.size(),
+                                    [&](std::size_t worker_id, std::size_t start, std::size_t end) {
+                                        // Same structure as edge_fill's parallel scan, but the
+                                        // per-candidate cost is `getNeighbourDifference` which
+                                        // itself walks each candidate's neighbours. Safe to call
+                                        // concurrently: it only reads pixel state, and no writes
+                                        // to pixels happen until AFTER the reduction below.
+                                        std::size_t bi = start;
+                                        float bd = this->getNeighbourDifference(
+                                            availablePoints[start], colour, neighbour_average);
+                                        for (std::size_t i = start + 1; i < end; ++i) {
+                                            float d = this->getNeighbourDifference(
+                                                availablePoints[i], colour, neighbour_average);
+                                            if (d < bd) {
+                                                bd = d;
+                                                bi = i;
+                                            }
+                                        }
+                                        local_best_index[worker_id] = bi;
+                                        local_best_diff[worker_id] = bd;
+                                    });
+
+        // Sequential reduction across per-worker locals.
+        std::size_t best_index = local_best_index[0];
+        float best_difference = local_best_diff[0];
+        for (std::size_t w = 1; w < thread_pool_.num_workers(); ++w) {
+            if (local_best_diff[w] < best_difference) {
+                best_difference = local_best_diff[w];
+                best_index = local_best_index[w];
             }
         }
+        Point best_point = availablePoints[best_index];
 
         Pixel *pixel = this->getPixelAtPoint(best_point);
         pixel->is_filled = true;

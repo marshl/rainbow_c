@@ -8,6 +8,7 @@
 #include "colour.h"
 #include "pixel.h"
 #include "point.h"
+#include "thread_pool.h"
 
 enum OrderingType {
     COLOUR_ORDER_HUE,
@@ -114,6 +115,11 @@ private:
     std::vector<Pixel> pixels;
     std::vector<Point> available_edges;
     std::size_t colour_index = 0;
+
+    // Launched at construction with hardware_concurrency threads and reused
+    // for every parallel min-reduction. Deleted-copy in ThreadPool makes
+    // RainbowRenderer non-copyable transitively — that's fine, we never copy it.
+    ThreadPool thread_pool_;
 
     /// Get the pixel at the given x and y coordinates
     /// \param x The x coordinate
