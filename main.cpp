@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
                     std::cout << "Setting start position to centre" << std::endl;
                     start_type = RainbowRenderer::START_TYPE_CENTRE;
                 } else if (start_type_str == "corner") {
-                    std::cout << "Setting start position too corner(s)" << std::endl;
+                    std::cout << "Setting start position to corner(s)" << std::endl;
                     start_type = RainbowRenderer::START_TYPE_CORNER;
                 } else if (start_type_str == "horizontal") {
                     start_type = RainbowRenderer::START_TYPE_HORIZONTAL_LINE;
