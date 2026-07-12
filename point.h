@@ -9,11 +9,6 @@ struct Point {
     int x;
     int y;
 
-    Point() {
-        x = -1;
-        y = -1;
-    }
-
     Point(int _x, int _y) {
         this->x = _x;
         this->y = _y;

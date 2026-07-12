@@ -149,7 +149,7 @@ void RainbowRenderer::init() {
     std::shuffle(possible_start_points.begin(), possible_start_points.end(), this->rng);
     if (this->num_start_points > possible_start_points.size()) {
         std::cout << this->num_start_points << " starting points were requested, but there are only "
-                  << possible_start_points.size() << " available" << std::endl;
+                << possible_start_points.size() << " available" << std::endl;
     }
 
     for (int i = 0; i < possible_start_points.size() && i < this->num_start_points; ++i) {
@@ -182,12 +182,14 @@ void RainbowRenderer::edge_fill() {
             break;
         }
         const Colour &current_colour = this->colours[this->colour_index];
-        Point best_point;
-        float best_difference = std::numeric_limits<float>::max();
-        for (auto &available_edge: this->available_edges) {
-            float diff = this->difference_function(current_colour, getPixelAtPoint(available_edge)->colour);
+        auto it = this->available_edges.begin();
+        Point best_point = *it;
+        float best_difference = this->difference_function(current_colour, getPixelAtPoint(*it)->colour);
+        ++it;
+        for (; it != this->available_edges.end(); ++it) {
+            float diff = this->difference_function(current_colour, getPixelAtPoint(*it)->colour);
             if (diff < best_difference) {
-                best_point = available_edge;
+                best_point = *it;
                 best_difference = diff;
             }
         }
@@ -209,9 +211,9 @@ void RainbowRenderer::edge_fill() {
 
             if (this->colour_index % partition == 0) {
                 std::cout << "Step " << this->colour_index << " with " << this->available_edges.size() << " edges ("
-                          << ((float) this->colour_index / float(this->pixels_high * this->pixels_wide) * 100)
-                          << "%)"
-                          << std::endl;
+                        << ((float) this->colour_index / float(this->pixels_high * this->pixels_wide) * 100)
+                        << "%)"
+                        << std::endl;
                 std::ostringstream stream;
                 stream << "output_" << int(this->colour_index / partition) << ".bmp";
                 std::cout << "Saving..." << std::flush;
@@ -254,16 +256,18 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
     // While there are colours to place and available spots to place them
     for (; this->colour_index < this->colours.size() && !availablePoints.empty(); ++this->colour_index) {
         Colour &colour = this->colours[colour_index];
-        Point best_point;
-        float best_difference = std::numeric_limits<float>::max();
-        // Find the point that has neighbours that are closest
-        for (auto point: availablePoints) {
-            float neighbourDiff = this->getNeighbourDifference(point, colour, neighbour_average);
+        auto it = availablePoints.begin();
+        Point best_point = *it;
+        float best_difference = this->getNeighbourDifference(*it, colour, neighbour_average);
+        ++it;
+        for (; it != availablePoints.end(); ++it) {
+            float neighbourDiff = this->getNeighbourDifference(*it, colour, neighbour_average);
             if (neighbourDiff < best_difference) {
                 best_difference = neighbourDiff;
-                best_point = point;
+                best_point = *it;
             }
         }
+
         Pixel *pixel = this->getPixelAtPoint(best_point);
         pixel->is_filled = true;
         pixel->is_available = false;
@@ -282,17 +286,16 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
 
         if (this->colour_index % partition == 0) {
             std::cout << "Placed " << this->colour_index << "/" << total_pixels << " pixels ( "
-                      << ((float) this->colour_index / float(total_pixels) * 100) << "%) with "
-                      << availablePoints.size()
-                      << " spaces available"
-                      << std::endl;
+                    << ((float) this->colour_index / float(total_pixels) * 100) << "%) with "
+                    << availablePoints.size()
+                    << " spaces available"
+                    << std::endl;
             std::ostringstream stream;
             stream << "output_" << int(this->colour_index / partition) << ".bmp";
             std::cout << "Saving..." << std::flush;
             this->writeToFile(stream.str());
             std::cout << "Done" << std::endl;
         }
-
     }
 }
 
@@ -406,10 +409,10 @@ void RainbowRenderer::fillColours() {
             }
         }
         std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
-                  << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
+                << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
     } else {
         std::cout << "Starting hues detected, ignoring colour depth and instead start from hue points."
-                  << std::endl;
+                << std::endl;
         int offset = 0;
         std::set<Colour> colourSet;
         while (colourSet.size() < this->pixels_wide * this->pixels_high) {
@@ -427,7 +430,9 @@ void RainbowRenderer::fillColours() {
                             int hueDifference = std::abs(hue - targetHue);
                             if (hueDifference >= 180) {
                                 hueDifference =
-                                        targetHue > hue ? std::abs(hue + 360 - targetHue) : std::abs(
+                                        targetHue > hue
+                                            ? std::abs(hue + 360 - targetHue)
+                                            : std::abs(
                                                 hue + targetHue - 360);
                             }
                             if (std::abs(hueDifference - offset) <= 1 &&
@@ -450,8 +455,8 @@ void RainbowRenderer::fillColours() {
 
     if (this->colours.size() < this->pixels_wide * this->pixels_high) {
         std::cout << "All colours were exhausted with only  "
-                  << 100 * this->colours.size() / (this->pixels_wide * this->pixels_high)
-                  << "% of the image covered. Please revise input parameters" << std::endl;
+                << 100 * this->colours.size() / (this->pixels_wide * this->pixels_high)
+                << "% of the image covered. Please revise input parameters" << std::endl;
         exit(1);
     }
 
@@ -486,7 +491,6 @@ void RainbowRenderer::fillColours() {
         } else {
             std::sort(std::begin(colours), std::end(colours), compare_func);
         }
-
     }
 }
 
@@ -500,4 +504,3 @@ void RainbowRenderer::fillPoint(Point &point) {
     pixel->is_filled = true;
     ++this->colour_index;
 }
-
