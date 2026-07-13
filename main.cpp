@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     RainbowRenderer rainbow_renderer;
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:F:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:F:C:")) != -1) {
         switch (c) {
             case 'w': {
                 // Width
@@ -42,6 +42,26 @@ int main(int argc, char *argv[]) {
                 }
                 std::cout << "Setting renderer height to " << pixelsHigh << std::endl;
                 rainbow_renderer.setPixelsHigh(pixelsHigh);
+                break;
+            }
+            case 'C': {
+                // Starting colours
+                std::string hex = optarg;
+                if (!hex.empty() && hex.front() == '#') {
+                    hex.erase(0, 1);
+                }
+                if (hex.size() != 6) {
+                    std::cerr << "Colour must be 6 hex digits" << hex << std::endl;
+                }
+                int r, g, b;
+                try {
+                    r = std::stoi(hex.substr(0, 2), nullptr, 16);
+                    g = std::stoi(hex.substr(2, 2), nullptr, 16);
+                    b = std::stoi(hex.substr(4, 2), nullptr, 16);
+                } catch (const std::exception &) {
+                    std::cerr << "Invalid colour argument " << hex << std::endl;
+                }
+                rainbow_renderer.addStartingColour(Colour(r, g, b));
                 break;
             }
             case 'H': {

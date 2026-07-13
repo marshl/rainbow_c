@@ -62,6 +62,8 @@ public:
 
     void addStartingHue(int hue);
 
+    void addStartingColour(const Colour &colour);
+
     void setMinimumLuminosity(float luminosity);
 
     void setMaximumLuminosity(float luminosity);
@@ -82,7 +84,6 @@ public:
 
     float getNeighbourDifference(Point point, const Colour &colour, bool neighbour_average = false);
 
-
     /// Writes the current content of the pixel board out to file
     /// \param _filename
     void writeToFile(const std::string &_filename);
@@ -100,6 +101,7 @@ private:
     FillMode fill_mode = FillMode::FILL_MODE_EDGE;
     std::vector<ColourOrdering> colour_ordering;
     std::vector<int> startingHues;
+    std::vector<Colour> startingColours;
 
     float minimumLuminosity = 0.0f;
     float maximumLuminosity = 1.0f;

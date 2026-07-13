@@ -54,6 +54,10 @@ void RainbowRenderer::addStartingHue(int hue) {
     this->startingHues.push_back(hue);
 }
 
+void RainbowRenderer::addStartingColour(const Colour &colour) {
+    this->startingColours.push_back(colour);
+}
+
 void RainbowRenderer::setMinimumLuminosity(float luminosity) {
     this->minimumLuminosity = luminosity;
 }
@@ -267,13 +271,13 @@ void RainbowRenderer::edge_fill() {
             // itself. Any that became fully surrounded are popped in O(1).
             // Skip `neighbour` — it was just added by pushEdge above and we
             // don't want to check it against itself.
-            for (const Point &m : this->getNeighboursOfPoint(neighbour)) {
+            for (const Point &m: this->getNeighboursOfPoint(neighbour)) {
                 Pixel *m_pixel = this->getPixelAtPoint(m);
                 if (m_pixel->edge_index < 0) {
                     continue;
                 }
                 bool has_open = false;
-                for (const Point &mn : this->getNeighboursOfPoint(m)) {
+                for (const Point &mn: this->getNeighboursOfPoint(m)) {
                     if (!this->getPixelAtPoint(mn)->is_filled) {
                         has_open = true;
                         break;
@@ -486,7 +490,7 @@ std::vector<Point> RainbowRenderer::getNeighboursOfPoint(const Point &point) con
 /// Fills the list of random colours
 /// \param colour_depth The number of each unique colours in each channel
 void RainbowRenderer::fillColours() {
-    if (this->startingHues.empty()) {
+    if (this->startingHues.empty() && this->startingColours.empty()) {
         if (this->colour_depth == 0) {
             this->colour_depth = ceil(pow(this->pixels_wide * this->pixels_high, 1.0f / 3.0f));
         }
@@ -503,7 +507,8 @@ void RainbowRenderer::fillColours() {
         std::cout << "Colour depth " << this->colour_depth << " makes " << this->colours.size() << " colours (of "
                 << (this->pixels_wide * this->pixels_high) << " pixels)" << std::endl;
     } else {
-        std::cout << "Starting hues detected, ignoring colour depth and instead start from hue points."
+        std::cout <<
+                "Starting hues/colours detected, ignoring colour depth and instead comparing with provided colours."
                 << std::endl;
         int offset = 0;
         std::set<Colour> colourSet;
@@ -511,6 +516,7 @@ void RainbowRenderer::fillColours() {
             for (int r = 0; r <= 255; ++r) {
                 for (int g = 0; g <= 255; ++g) {
                     for (int b = 0; b <= 255; ++b) {
+                        const Colour candidate = Colour(r, g, b);
                         const auto t = rgbToHsl(r, g, b);
                         int hue = int(std::get<0>(t) * 360);
                         float sat = std::get<1>(t);
@@ -530,9 +536,22 @@ void RainbowRenderer::fillColours() {
                             if (std::abs(hueDifference - offset) <= 1 &&
                                 lum >= this->minimumLuminosity && lum <= this->maximumLuminosity &&
                                 sat >= this->minimumSaturation && sat <= this->maximumSaturation) {
-                                if (colourSet.find(Colour(r, g, b)) == colourSet.end()) {
-                                    colourSet.insert(Colour(r, g, b));
+                                if (colourSet.find(candidate) == colourSet.end()) {
+                                    colourSet.insert(candidate);
                                     break;
+                                }
+                            }
+                        }
+                        for (const Colour &targetColour: this->startingColours) {
+                            int difference = this->difference_function(targetColour, candidate);
+                            if (std::abs(difference - offset) <= 1) {
+                                if (std::abs(difference - offset) <= 1 &&
+                                    lum >= this->minimumLuminosity && lum <= this->maximumLuminosity &&
+                                    sat >= this->minimumSaturation && sat <= this->maximumSaturation) {
+                                    if (colourSet.find(candidate) == colourSet.end()) {
+                                        colourSet.insert(Colour(r, g, b));
+                                        break;
+                                    }
                                 }
                             }
                         }

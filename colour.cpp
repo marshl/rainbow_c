@@ -71,15 +71,20 @@ float getColourAbsoluteDiff(const Colour &colour_1, const Colour &colour_2) {
     int r = colour_1.r - colour_2.r;
     int g = colour_1.g - colour_2.g;
     int b = colour_1.b - colour_2.b;
-    return float(r * r + g * g + b * b);
+    // Take sqrt to convert squared distance to actual Euclidean distance;
+    // divide by sqrt(3) so max is 255 (when the diff is (255, 255, 255)).
+    return std::sqrt(float(r * r + g * g + b * b)) / std::sqrt(3.0f);
 }
 
 float getColourHueDiff(const Colour &colour_1, const Colour &colour_2) {
-    return std::fabs((colour_1.hue - colour_1.lum) - (colour_2.hue - colour_2.lum));
+    // Underlying value is in [0, 2] (hue and lum both in [0, 1]);
+    // scale by 127.5 to hit [0, 255].
+    return std::fabs((colour_1.hue - colour_1.lum) - (colour_2.hue - colour_2.lum)) * 127.5f;
 }
 
 float getColourLuminosityDiff(const Colour &colour_1, const Colour &colour_2) {
-    return std::fabs(colour_1.lum - colour_2.lum);
+    // lum is in [0, 1], diff is in [0, 1], scale to [0, 255].
+    return std::fabs(colour_1.lum - colour_2.lum) * 255.0f;
 }
 
 float getNaturalColourDiff(const Colour &colour_1, const Colour &colour_2) {
@@ -87,7 +92,11 @@ float getNaturalColourDiff(const Colour &colour_1, const Colour &colour_2) {
     int r = colour_1.r - colour_2.r;
     int g = colour_1.g - colour_2.g;
     int b = colour_1.b - colour_2.b;
-    return float((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8));
+    float squared = float((((512 + rmean) * r * r) >> 8)
+                          + 4 * g * g
+                          + (((767 - rmean) * b * b) >> 8));
+    // sqrt to linear-perceptual, then scale. Empirical max is ~sqrt(650000) ≈ 806.
+    return std::sqrt(squared) / std::sqrt(650000.0f) * 255.0f;
 }
 
 bool compareHue(const Colour &c1, const Colour &c2) {
@@ -101,4 +110,3 @@ bool compareLum(const Colour &c1, const Colour &c2) {
 bool compareSat(const Colour &c1, const Colour &c2) {
     return c1.sat < c2.sat;
 }
-
