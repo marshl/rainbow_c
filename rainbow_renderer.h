@@ -64,6 +64,8 @@ public:
 
     void addStartingColour(const Colour &colour);
 
+    void setStripePositions(const std::vector<int> &positions);
+
     void setMinimumLuminosity(float luminosity);
 
     void setMaximumLuminosity(float luminosity);
@@ -103,6 +105,15 @@ private:
     std::vector<int> startingHues;
     std::vector<Colour> startingColours;
 
+    // Y-position for each stripe (parallel to startingColours). When
+    // populated, init() seeds one horizontal row per stripe instead of
+    // running the normal start_type logic. Empty = normal behaviour.
+    std::vector<int> stripePositions;
+
+    // One reserved buffer of seed colours per stripe (pixels_wide entries
+    // each). Populated by fillColours in stripe mode; consumed by init.
+    std::vector<std::vector<Colour>> stripeSeeds;
+
     float minimumLuminosity = 0.0f;
     float maximumLuminosity = 1.0f;
 
@@ -140,6 +151,10 @@ private:
     /// Fills the list of random colours
     /// \param colour_depth The number of each unique colours in each channel
     void fillColours();
+
+    /// Apply colour_ordering to this->colours (default to random if empty).
+    /// Extracted so fillColours' two branches can share the logic.
+    void applyColourOrdering(bool default_to_random);
 
     /// Fills the pixel at the given point
     /// \param point The pointto place the pixel at

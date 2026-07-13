@@ -58,6 +58,10 @@ void RainbowRenderer::addStartingColour(const Colour &colour) {
     this->startingColours.push_back(colour);
 }
 
+void RainbowRenderer::setStripePositions(const std::vector<int> &positions) {
+    this->stripePositions = positions;
+}
+
 void RainbowRenderer::setMinimumLuminosity(float luminosity) {
     this->minimumLuminosity = luminosity;
 }
@@ -78,6 +82,37 @@ void RainbowRenderer::setMaximumSaturation(float saturation) {
 void RainbowRenderer::init() {
     this->rng = std::default_random_engine(this->seed);
     this->pixels.resize(this->pixels_wide * this->pixels_high);
+
+    // Compute colours up front: in stripe mode this also reserves per-stripe
+    // seed rows in stripeSeeds, which we consume below.
+    this->fillColours();
+
+    // Stripe mode short-circuits the normal start_type logic — each stripe
+    // gets a full horizontal seed row instead of a handful of start points.
+    if (!this->stripePositions.empty()) {
+        for (std::size_t i = 0; i < this->stripePositions.size(); ++i) {
+            const int y = this->stripePositions[i];
+            if (y < 0 || y >= this->pixels_high) {
+                std::ostringstream msg;
+                msg << "Stripe position " << y << " for stripe " << i
+                        << " is outside the image (0.." << (this->pixels_high - 1) << ")";
+                throw std::runtime_error(msg.str());
+            }
+            const std::vector<Colour> &seeds = this->stripeSeeds[i];
+            for (int x = 0; x < this->pixels_wide; ++x) {
+                Point p(x, y);
+                Pixel *pixel = this->getPixelAtPoint(p);
+                pixel->colour = seeds[x];
+                pixel->is_filled = true;
+                this->pushEdge(p);
+            }
+            std::cout << "Seeded stripe " << i << " at y=" << y
+                    << " (" << this->pixels_wide << " pixels)" << std::endl;
+        }
+        std::cout << "Finished placing stripe seed rows" << std::endl;
+        return;
+    }
+
     std::vector<Point> possible_start_points;
 
     switch (this->start_type) {
@@ -163,8 +198,6 @@ void RainbowRenderer::init() {
                 << " are available for the chosen start type";
         throw std::runtime_error(msg.str());
     }
-
-    this->fillColours();
 
     std::shuffle(possible_start_points.begin(), possible_start_points.end(), this->rng);
     std::size_t cap = this->num_start_points.value_or(possible_start_points.size());
@@ -490,6 +523,91 @@ std::vector<Point> RainbowRenderer::getNeighboursOfPoint(const Point &point) con
 /// Fills the list of random colours
 /// \param colour_depth The number of each unique colours in each channel
 void RainbowRenderer::fillColours() {
+    // Stripe mode: one target colour per horizontal stripe, one seed row
+    // reserved per stripe. Each stripe claims its colours via a shell
+    // search around its own target, and later stripes see only what
+    // earlier ones didn't claim (so duplicate targets still get distinct
+    // colour buckets).
+    if (!this->stripePositions.empty()) {
+        if (this->stripePositions.size() != this->startingColours.size()) {
+            throw std::runtime_error(
+                "Number of stripe positions (-P) must match number of starting colours (-C)");
+        }
+        const std::size_t num_stripes = this->stripePositions.size();
+        const std::size_t total_pixels =
+                static_cast<std::size_t>(this->pixels_wide) * this->pixels_high;
+        const std::size_t pixels_per_stripe = total_pixels / num_stripes;
+        if (pixels_per_stripe < static_cast<std::size_t>(this->pixels_wide)) {
+            throw std::runtime_error(
+                "Each stripe needs at least pixels_wide colours for its seed row");
+        }
+
+        // Colours already assigned to some stripe. Prevents a colour matching
+        // two targets (e.g. two identical pink stripes) from being handed to
+        // both — the later stripe just keeps searching further shells.
+        std::set<Colour> claimed;
+        this->stripeSeeds.assign(num_stripes, std::vector<Colour>());
+
+        for (std::size_t i = 0; i < num_stripes; ++i) {
+            const Colour &target = this->startingColours[i];
+            std::vector<Colour> bucket;
+            bucket.reserve(pixels_per_stripe);
+
+            int offset = 0;
+            std::size_t last_size = 0;
+            int dry_passes = 0;
+            while (bucket.size() < pixels_per_stripe && dry_passes < 2) {
+                for (int r = 0; r <= 255 && bucket.size() < pixels_per_stripe; ++r) {
+                    for (int g = 0; g <= 255 && bucket.size() < pixels_per_stripe; ++g) {
+                        for (int b = 0; b <= 255 && bucket.size() < pixels_per_stripe; ++b) {
+                            Colour candidate(r, g, b);
+                            if (claimed.count(candidate)) continue;
+                            const auto hsl = rgbToHsl(r, g, b);
+                            float sat = std::get<1>(hsl);
+                            float lum = std::get<2>(hsl);
+                            if (lum < this->minimumLuminosity || lum > this->maximumLuminosity ||
+                                sat < this->minimumSaturation || sat > this->maximumSaturation) {
+                                continue;
+                            }
+                            int diff = int(this->difference_function(target, candidate));
+                            if (std::abs(diff - offset) <= 1) {
+                                bucket.push_back(candidate);
+                                claimed.insert(candidate);
+                            }
+                        }
+                    }
+                }
+                if (bucket.size() == last_size) {
+                    ++dry_passes;
+                } else {
+                    dry_passes = 0;
+                    last_size = bucket.size();
+                }
+                ++offset;
+                std::cout << "Stripe " << i << ": " << bucket.size() << "/"
+                        << pixels_per_stripe << " colours at offset " << offset << std::endl;
+            }
+
+            if (bucket.size() < pixels_per_stripe) {
+                std::ostringstream msg;
+                msg << "Stripe " << i << " could only find " << bucket.size()
+                        << " colours (need " << pixels_per_stripe
+                        << "). Widen colour bounds or spread targets further apart.";
+                throw std::runtime_error(msg.str());
+            }
+
+            // First pixels_wide entries become the seed row for this stripe.
+            // Everything else goes to the shared fill pool.
+            this->stripeSeeds[i].assign(bucket.begin(), bucket.begin() + this->pixels_wide);
+            std::shuffle(this->stripeSeeds[i].begin(), this->stripeSeeds[i].end(), this->rng);
+            this->colours.insert(this->colours.end(),
+                                 bucket.begin() + this->pixels_wide, bucket.end());
+        }
+
+        this->applyColourOrdering(true);
+        return;
+    }
+
     if (this->startingHues.empty() && this->startingColours.empty()) {
         if (this->colour_depth == 0) {
             this->colour_depth = ceil(pow(this->pixels_wide * this->pixels_high, 1.0f / 3.0f));
@@ -573,11 +691,19 @@ void RainbowRenderer::fillColours() {
         throw std::runtime_error(message.str());
     }
 
-    // Default colour ordering if the user doesn't supply any
+    this->applyColourOrdering(false);
+}
+
+void RainbowRenderer::applyColourOrdering(bool default_to_random) {
     if (this->colour_ordering.empty()) {
-        this->colour_ordering.push_back({COLOUR_ORDER_LUM, false});
-        this->colour_ordering.push_back({COLOUR_ORDER_HUE, false});
-        this->colour_ordering.push_back({COLOUR_ORDER_SAT, true});
+        if (default_to_random) {
+            // Stripe mode wants random so all clusters grow at once.
+            this->colour_ordering.push_back({COLOUR_ORDER_RANDOM, false});
+        } else {
+            this->colour_ordering.push_back({COLOUR_ORDER_LUM, false});
+            this->colour_ordering.push_back({COLOUR_ORDER_HUE, false});
+            this->colour_ordering.push_back({COLOUR_ORDER_SAT, true});
+        }
     }
 
     for (auto order: this->colour_ordering) {

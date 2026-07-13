@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <random>
 #include <ctime>
+#include <sstream>
+#include <vector>
 #include <unistd.h>
 
 #include "bmp.h"
@@ -20,7 +22,7 @@ int main(int argc, char *argv[]) {
     RainbowRenderer rainbow_renderer;
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:F:C:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:F:C:P:")) != -1) {
         switch (c) {
             case 'w': {
                 // Width
@@ -291,11 +293,29 @@ int main(int argc, char *argv[]) {
                 rainbow_renderer.setNumIntermediateFrames(num_frames);
                 break;
             }
+            case 'P': {
+                // Stripe positions: comma-separated y-coordinates, one per -C target.
+                std::vector<int> positions;
+                std::stringstream ss(optarg);
+                std::string token;
+                while (std::getline(ss, token, ',')) {
+                    try {
+                        positions.push_back(std::stoi(token));
+                    } catch (const std::exception &) {
+                        std::cerr << "Invalid stripe position " << token << std::endl;
+                        return 1;
+                    }
+                }
+                rainbow_renderer.setStripePositions(positions);
+                std::cout << "Set " << positions.size() << " stripe positions" << std::endl;
+                break;
+            }
             case '?': {
                 if (optopt == 'h' || optopt == 'w' || optopt == 'H' || optopt == 'c' ||
                     optopt == 'd' || optopt == 'r' || optopt == 'f' || optopt == 'o' ||
                     optopt == 'l' || optopt == 'L' || optopt == 's' || optopt == 'S' ||
-                    optopt == 'p' || optopt == 'n' || optopt == 'F') {
+                    optopt == 'p' || optopt == 'n' || optopt == 'F' || optopt == 'C' ||
+                    optopt == 'P') {
                     std::cerr << "Option -" << char(optopt) << " requires an argument" << std::endl;
                 } else if (isprint(optopt)) {
                     std::cerr << "Unknown option -" << char(optopt) << std::endl;
