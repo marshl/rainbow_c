@@ -87,8 +87,6 @@ public:
     /// \param _filename
     void writeToFile(const std::string &_filename);
 
-    void cleanFilledEdges();
-
 private:
     std::default_random_engine rng;
     unsigned int seed = std::random_device{}();
@@ -144,6 +142,14 @@ private:
     /// Fills the pixel at the given point
     /// \param point The pointto place the pixel at
     void fillPoint(Point &point);
+
+    /// Push a point onto available_edges and record its index on the pixel
+    /// so future removals can happen in O(1).
+    void pushEdge(const Point &p);
+
+    /// Swap-pop the edge at `idx` from available_edges, keeping the moved
+    /// element's stored edge_index in sync.
+    void popEdge(std::size_t idx);
 };
 
 #endif //RAINBOW_C_RAINBOW_RENDERER_H

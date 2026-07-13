@@ -259,15 +259,36 @@ void RainbowRenderer::edge_fill() {
             }
             neighbour_pixel->colour = current_colour;
             neighbour_pixel->is_filled = true;
-            this->available_edges.push_back(neighbour);
+            this->pushEdge(neighbour);
             ++this->colour_index;
+
+            // Incremental cleanup: the only edges whose unfilled-neighbour
+            // count just dropped are the filled neighbours of `neighbour`
+            // itself. Any that became fully surrounded are popped in O(1).
+            // Skip `neighbour` — it was just added by pushEdge above and we
+            // don't want to check it against itself.
+            for (const Point &m : this->getNeighboursOfPoint(neighbour)) {
+                Pixel *m_pixel = this->getPixelAtPoint(m);
+                if (m_pixel->edge_index < 0) {
+                    continue;
+                }
+                bool has_open = false;
+                for (const Point &mn : this->getNeighboursOfPoint(m)) {
+                    if (!this->getPixelAtPoint(mn)->is_filled) {
+                        has_open = true;
+                        break;
+                    }
+                }
+                if (!has_open) {
+                    this->popEdge(static_cast<std::size_t>(m_pixel->edge_index));
+                }
+            }
 
             if (this->colour_index % progress_partition == 0) {
                 std::cout << "Step " << this->colour_index << " with " << this->available_edges.size() << " edges ("
                         << ((float) this->colour_index / float(total_pixels) * 100)
                         << "%)"
                         << std::endl;
-                this->cleanFilledEdges();
             }
             if (save_partition > 0 && this->colour_index % save_partition == 0) {
                 std::ostringstream stream;
@@ -280,10 +301,11 @@ void RainbowRenderer::edge_fill() {
         }
 
         if (neighbour_index == neighbour_count) {
-            // Remove the best point without requiring moving all indices
-            // after the best index
-            this->available_edges[best_index] = this->available_edges.back();
-            this->available_edges.pop_back();
+            // Best-point was already surrounded when we picked it. Incremental
+            // cleanup normally catches this, but starting points placed
+            // adjacent to each other in fillPoint can slip through — one may
+            // be surrounded before any fill has run.
+            this->popEdge(best_index);
         }
     }
 }
@@ -429,33 +451,6 @@ void RainbowRenderer::writeToFile(const std::string &_filename) {
     bmp.write(_filename.c_str());
 }
 
-void RainbowRenderer::cleanFilledEdges() {
-    std::cout << "Cleaning filled edges... " << std::flush;
-    int removedEdges = 0;
-    std::size_t i = 0;
-    while (i < this->available_edges.size()) {
-        Point edgePoint = this->available_edges[i];
-        auto neighbours = getNeighboursOfPoint(edgePoint);
-        bool hasOpenNeighbours = false;
-        for (auto &neighbour_point: neighbours) {
-            const Pixel *neighbour_pixel = getPixelAtPoint(neighbour_point);
-            if (!neighbour_pixel->is_filled) {
-                hasOpenNeighbours = true;
-                break;
-            }
-        }
-        if (!hasOpenNeighbours) {
-            this->available_edges[i] = this->available_edges.back();
-            this->available_edges.pop_back();
-            removedEdges += 1;
-        } else {
-            ++i;
-        }
-    }
-    std::cout << "Done (cleaned " << removedEdges << " edges)" << std::endl;
-}
-
-
 Pixel *RainbowRenderer::getPixel(int x, int y) {
     return &this->pixels[y * this->pixels_wide + x];
 }
@@ -597,9 +592,25 @@ void RainbowRenderer::fillColours() {
 /// Fills the pixel at the given point
 /// \param point The point to place the pixel at
 void RainbowRenderer::fillPoint(Point &point) {
-    this->available_edges.push_back(point);
     Pixel *pixel = getPixelAtPoint(point);
     pixel->colour = this->colours[this->colour_index];
     pixel->is_filled = true;
+    this->pushEdge(point);
     ++this->colour_index;
+}
+
+void RainbowRenderer::pushEdge(const Point &p) {
+    this->getPixelAtPoint(p)->edge_index = static_cast<int>(this->available_edges.size());
+    this->available_edges.push_back(p);
+}
+
+void RainbowRenderer::popEdge(std::size_t idx) {
+    this->getPixelAtPoint(this->available_edges[idx])->edge_index = -1;
+    const std::size_t last = this->available_edges.size() - 1;
+    if (idx != last) {
+        this->available_edges[idx] = this->available_edges[last];
+        // The pixel we just moved into `idx` now lives at `idx`, not `last`.
+        this->getPixelAtPoint(this->available_edges[idx])->edge_index = static_cast<int>(idx);
+    }
+    this->available_edges.pop_back();
 }
