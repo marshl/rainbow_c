@@ -1,8 +1,13 @@
 #include "rainbow_renderer.h"
 
-#include "bmp.h"
+// stb_image_write is a single-header library — the implementation is
+// only compiled where STB_IMAGE_WRITE_IMPLEMENTATION is defined before
+// the include, which must happen in exactly one translation unit.
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <set>
 #include <sstream>
@@ -501,14 +506,23 @@ float RainbowRenderer::getNeighbourDifference(Point point, const Colour &colour,
 /// Writes the current content of the pixel board out to file
 /// \param _filename
 void RainbowRenderer::writeToFile(const std::string &_filename) {
-    BMP bmp = BMP(this->pixels_wide, this->pixels_high, false);
+    // stb_image_write expects a contiguous byte buffer, top-to-bottom,
+    // 3 bytes per pixel in R, G, B order. Colour channels are stored as
+    // int (0..255) on our side; narrow to uint8_t for the buffer.
+    std::vector<uint8_t> buffer(static_cast<std::size_t>(this->pixels_wide)
+                                * this->pixels_high * 3);
     for (int y = 0; y < this->pixels_high; ++y) {
         for (int x = 0; x < this->pixels_wide; ++x) {
-            Pixel *pixel = getPixel(x, y);
-            bmp.set_pixel(x, y, pixel->colour.b, pixel->colour.g, pixel->colour.r);
+            const Pixel *pixel = getPixel(x, y);
+            const std::size_t idx =
+                (static_cast<std::size_t>(y) * this->pixels_wide + x) * 3;
+            buffer[idx + 0] = static_cast<uint8_t>(pixel->colour.r);
+            buffer[idx + 1] = static_cast<uint8_t>(pixel->colour.g);
+            buffer[idx + 2] = static_cast<uint8_t>(pixel->colour.b);
         }
     }
-    bmp.write(_filename.c_str());
+    stbi_write_bmp(_filename.c_str(),
+                   this->pixels_wide, this->pixels_high, 3, buffer.data());
 }
 
 Pixel *RainbowRenderer::getPixel(int x, int y) {

@@ -6,7 +6,6 @@
 #include <vector>
 #include <unistd.h>
 
-#include "bmp.h"
 #include "colour.h"
 #include "rainbow_renderer.h"
 
