@@ -62,6 +62,10 @@ void RainbowRenderer::setStripePositions(const std::vector<int> &positions) {
     this->stripePositions = positions;
 }
 
+void RainbowRenderer::setSeedAtBoundaries(bool value) {
+    this->seedAtBoundaries = value;
+}
+
 void RainbowRenderer::setMinimumLuminosity(float luminosity) {
     this->minimumLuminosity = luminosity;
 }
@@ -88,26 +92,45 @@ void RainbowRenderer::init() {
     this->fillColours();
 
     // Stripe mode short-circuits the normal start_type logic — each stripe
-    // gets a full horizontal seed row instead of a handful of start points.
+    // gets one seed row at its centre (default) or two seed rows at its
+    // top and bottom edges (-B). Boundary mode gives razor-sharp
+    // stripe-to-stripe transitions; centre mode gives soft organic ones.
     if (!this->stripePositions.empty()) {
-        for (std::size_t i = 0; i < this->stripePositions.size(); ++i) {
-            const int y = this->stripePositions[i];
-            if (y < 0 || y >= this->pixels_high) {
-                std::ostringstream msg;
-                msg << "Stripe position " << y << " for stripe " << i
-                        << " is outside the image (0.." << (this->pixels_high - 1) << ")";
-                throw std::runtime_error(msg.str());
-            }
+        const std::size_t num_stripes = this->stripePositions.size();
+        const int stripe_height = this->pixels_high / int(num_stripes);
+        for (std::size_t i = 0; i < num_stripes; ++i) {
             const std::vector<Colour> &seeds = this->stripeSeeds[i];
-            for (int x = 0; x < this->pixels_wide; ++x) {
-                Point p(x, y);
-                Pixel *pixel = this->getPixelAtPoint(p);
-                pixel->colour = seeds[x];
-                pixel->is_filled = true;
-                this->pushEdge(p);
+
+            // Which y-rows this stripe seeds, in order matching the layout
+            // of seeds[]: centre mode = one row; boundary mode = top then
+            // bottom of the stripe's occupied range.
+            std::vector<int> ys;
+            if (this->seedAtBoundaries) {
+                ys.push_back(int(i) * stripe_height);
+                ys.push_back((int(i) + 1) * stripe_height - 1);
+            } else {
+                ys.push_back(this->stripePositions[i]);
             }
-            std::cout << "Seeded stripe " << i << " at y=" << y
-                    << " (" << this->pixels_wide << " pixels)" << std::endl;
+
+            for (std::size_t row = 0; row < ys.size(); ++row) {
+                const int y = ys[row];
+                if (y < 0 || y >= this->pixels_high) {
+                    std::ostringstream msg;
+                    msg << "Stripe " << i << " seed row at y=" << y
+                            << " is outside the image (0.." << (this->pixels_high - 1) << ")";
+                    throw std::runtime_error(msg.str());
+                }
+                const std::size_t seed_offset = row * this->pixels_wide;
+                for (int x = 0; x < this->pixels_wide; ++x) {
+                    Point p(x, y);
+                    Pixel *pixel = this->getPixelAtPoint(p);
+                    pixel->colour = seeds[seed_offset + x];
+                    pixel->is_filled = true;
+                    this->pushEdge(p);
+                }
+                std::cout << "Seeded stripe " << i << " at y=" << y
+                        << " (" << this->pixels_wide << " pixels)" << std::endl;
+            }
         }
         std::cout << "Finished placing stripe seed rows" << std::endl;
         return;
@@ -537,9 +560,14 @@ void RainbowRenderer::fillColours() {
         const std::size_t total_pixels =
                 static_cast<std::size_t>(this->pixels_wide) * this->pixels_high;
         const std::size_t pixels_per_stripe = total_pixels / num_stripes;
-        if (pixels_per_stripe < static_cast<std::size_t>(this->pixels_wide)) {
+        // Boundary mode reserves 2 seed rows per stripe (top + bottom edges);
+        // centre mode reserves 1.
+        const std::size_t seed_slots =
+                static_cast<std::size_t>(this->pixels_wide) *
+                (this->seedAtBoundaries ? 2 : 1);
+        if (pixels_per_stripe < seed_slots) {
             throw std::runtime_error(
-                "Each stripe needs at least pixels_wide colours for its seed row");
+                "Each stripe needs at least enough colours for its seed row(s)");
         }
 
         // Colours already assigned to some stripe. Prevents a colour matching
@@ -596,12 +624,12 @@ void RainbowRenderer::fillColours() {
                 throw std::runtime_error(msg.str());
             }
 
-            // First pixels_wide entries become the seed row for this stripe.
+            // First seed_slots entries become the seed row(s) for this stripe.
             // Everything else goes to the shared fill pool.
-            this->stripeSeeds[i].assign(bucket.begin(), bucket.begin() + this->pixels_wide);
+            this->stripeSeeds[i].assign(bucket.begin(), bucket.begin() + seed_slots);
             std::shuffle(this->stripeSeeds[i].begin(), this->stripeSeeds[i].end(), this->rng);
             this->colours.insert(this->colours.end(),
-                                 bucket.begin() + this->pixels_wide, bucket.end());
+                                 bucket.begin() + seed_slots, bucket.end());
         }
 
         this->applyColourOrdering(true);

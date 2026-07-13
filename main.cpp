@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     RainbowRenderer rainbow_renderer;
 
     int c;
-    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:F:C:P:")) != -1) {
+    while ((c = getopt(argc, argv, "h:w:H:c:d:r:f:o:l:L:s:S:p:n:F:C:P:B")) != -1) {
         switch (c) {
             case 'w': {
                 // Width
@@ -308,6 +308,13 @@ int main(int argc, char *argv[]) {
                 }
                 rainbow_renderer.setStripePositions(positions);
                 std::cout << "Set " << positions.size() << " stripe positions" << std::endl;
+                break;
+            }
+            case 'B': {
+                // Seed at stripe boundaries (top+bottom edges) instead of centres.
+                // Only meaningful in stripe mode (used with -C and -P).
+                rainbow_renderer.setSeedAtBoundaries(true);
+                std::cout << "Seeding stripes at boundaries (top and bottom edges)" << std::endl;
                 break;
             }
             case '?': {

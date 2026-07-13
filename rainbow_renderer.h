@@ -66,6 +66,8 @@ public:
 
     void setStripePositions(const std::vector<int> &positions);
 
+    void setSeedAtBoundaries(bool value);
+
     void setMinimumLuminosity(float luminosity);
 
     void setMaximumLuminosity(float luminosity);
@@ -110,8 +112,15 @@ private:
     // running the normal start_type logic. Empty = normal behaviour.
     std::vector<int> stripePositions;
 
-    // One reserved buffer of seed colours per stripe (pixels_wide entries
-    // each). Populated by fillColours in stripe mode; consumed by init.
+    // If true, each stripe is seeded at BOTH its top and bottom edges
+    // (2 rows per stripe) instead of a single row at the centre. Produces
+    // crisp stripe boundaries at the cost of a "mess" in each stripe's
+    // middle, where the two growth waves meet.
+    bool seedAtBoundaries = false;
+
+    // One reserved buffer of seed colours per stripe. In centre mode it
+    // holds pixels_wide entries; in boundary mode it holds 2*pixels_wide
+    // (first half seeds the top edge, second half seeds the bottom).
     std::vector<std::vector<Colour>> stripeSeeds;
 
     float minimumLuminosity = 0.0f;
