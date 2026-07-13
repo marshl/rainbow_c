@@ -513,9 +513,9 @@ void RainbowRenderer::fillColours() {
         int offset = 0;
         std::set<Colour> colourSet;
         while (colourSet.size() < this->pixels_wide * this->pixels_high) {
-            for (int r = 0; r < 255; ++r) {
-                for (int g = 0; g < 255; ++g) {
-                    for (int b = 0; b < 255; ++b) {
+            for (int r = 0; r <= 255; ++r) {
+                for (int g = 0; g <= 255; ++g) {
+                    for (int b = 0; b <= 255; ++b) {
                         const auto t = rgbToHsl(r, g, b);
                         int hue = int(std::get<0>(t) * 360);
                         float sat = std::get<1>(t);
@@ -545,7 +545,8 @@ void RainbowRenderer::fillColours() {
                 }
             }
             offset += 1;
-            std::cout << "Colour offset now " << offset << std::endl;
+            std::cout << "Found " << colourSet.size() << "/" << this->pixels_wide * this->pixels_high <<
+                    " colours with offset of " << offset << std::endl;
         }
         this->colours.insert(this->colours.end(), colourSet.begin(), colourSet.end());
     }
