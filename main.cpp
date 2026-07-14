@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
     time_t end_time = time(nullptr);
     std::cout << "Completed in " << (end_time - start_time) << "s" << std::endl;
 
-    rainbow_renderer.writeToFile("output.bmp");
+    rainbow_renderer.writeToFile("output.png");
 
     return 0;
 }

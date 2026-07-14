@@ -357,7 +357,7 @@ void RainbowRenderer::edge_fill() {
             }
             if (save_partition > 0 && this->colour_index % save_partition == 0) {
                 std::ostringstream stream;
-                stream << "output_" << int(this->colour_index / save_partition) << ".bmp";
+                stream << "output_" << int(this->colour_index / save_partition) << ".png";
                 std::cout << "Saving... " << std::flush;
                 this->writeToFile(stream.str());
                 std::cout << "Done" << std::endl;
@@ -474,7 +474,7 @@ void RainbowRenderer::neighbour_fill(bool neighbour_average) {
         }
         if (save_partition > 0 && this->colour_index % save_partition == 0) {
             std::ostringstream stream;
-            stream << "output_" << int(this->colour_index / save_partition) << ".bmp";
+            stream << "output_" << int(this->colour_index / save_partition) << ".png";
             std::cout << "Saving... " << std::flush;
             this->writeToFile(stream.str());
             std::cout << "Done" << std::endl;
@@ -515,14 +515,14 @@ void RainbowRenderer::writeToFile(const std::string &_filename) {
         for (int x = 0; x < this->pixels_wide; ++x) {
             const Pixel *pixel = getPixel(x, y);
             const std::size_t idx =
-                (static_cast<std::size_t>(y) * this->pixels_wide + x) * 3;
+                    (static_cast<std::size_t>(y) * this->pixels_wide + x) * 3;
             buffer[idx + 0] = static_cast<uint8_t>(pixel->colour.r);
             buffer[idx + 1] = static_cast<uint8_t>(pixel->colour.g);
             buffer[idx + 2] = static_cast<uint8_t>(pixel->colour.b);
         }
     }
-    stbi_write_bmp(_filename.c_str(),
-                   this->pixels_wide, this->pixels_high, 3, buffer.data());
+    stbi_write_png(_filename.c_str(),
+                   this->pixels_wide, this->pixels_high, 3, buffer.data(), this->pixels_wide * 3);
 }
 
 Pixel *RainbowRenderer::getPixel(int x, int y) {
