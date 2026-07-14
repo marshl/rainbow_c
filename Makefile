@@ -16,7 +16,7 @@ BIN := $(BUILD_DIR)/rainbow_c
 
 # Any target that isn't the name of a real file needs to be listed here,
 # or `make` will get confused if a file with that name ever appears.
-.PHONY: help build clean trans trans-boundary rainbow lesbian
+.PHONY: help build clean trans trans-boundary rainbow lesbian germany
 
 
 # ─── Build ────────────────────────────────────────────────────────────────
@@ -70,6 +70,14 @@ lesbian: build
 	    -P 75,225,375,525,675,825,975 \
 	    -o R -d colour -F 10
 
+# German flag: 5:3 ratio, three equal horizontal bands (black, red, gold),
+# hard boundaries between stripes.
+germany: build
+	$(BIN) -w 1500 -h 900 \
+	    -C 000000 -C DD0000 -C FFCE00 \
+	    -P 150,450,750 \
+	    -B -o R -d colour -F 10
+
 
 # ─── Help ─────────────────────────────────────────────────────────────────
 
@@ -88,5 +96,6 @@ help:
 	@echo "    trans-boundary  Same, with -B for razor-sharp stripe edges."
 	@echo "    rainbow         Classic 6-stripe rainbow (1800x1200)."
 	@echo "    lesbian         7-stripe lesbian pride flag (1750x1050)."
+	@echo "    germany         German national flag, hard bands (1500x900)."
 	@echo ""
 	@echo "  Usage:  make <target>"
